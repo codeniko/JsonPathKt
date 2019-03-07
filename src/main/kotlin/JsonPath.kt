@@ -80,7 +80,24 @@ class JsonPath(path: String) {
         tokens.forEach { token ->
             valueAtPath?.let { valueAtPath = token.read(it) }
         }
+        val lastValue = valueAtPath
+        if (lastValue is JSONArray && containsOnlyPrimitives(lastValue)) {
+            valueAtPath = lastValue.toList().toList() // return immutable list
+        } else if (lastValue == JSONObject.NULL) {
+            return null
+        }
         return valueAtPath as? T
+    }
+
+    private fun containsOnlyPrimitives(jsonArray: JSONArray) : Boolean {
+        val it = jsonArray.iterator()
+        while (it.hasNext()) {
+            val item = it.next()
+            if (item is JSONObject || item is JSONArray) {
+                return false
+            }
+        }
+        return true
     }
 
     /**

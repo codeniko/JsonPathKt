@@ -4,10 +4,10 @@ import com.nfeld.jsonpathlite.extension.read
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import java.util.*
 
 class JsonPathTest : BaseTest() {
 
@@ -107,7 +107,45 @@ class JsonPathTest : BaseTest() {
         val key = "!@#\$%^&*()_-+=[]{}|:;<,>.?`~" // excluding '
         val json = "[{\"key\": {\"$key\": 9}}]"
         val result = JSONArray(json).read<Int>("$[0].key['$key']")
-        JsonPath("$[0].key['$key']").printTokens()
         assertEquals(9, result)
+    }
+
+    @Test
+    fun shouldBeNullWhenReadingNull() {
+        val json = "[{\"key\": null}]"
+        val result = JSONArray(json).read<Int>("$[0].key")
+        assertNull(result)
+    }
+
+    @Test
+    fun shouldBeNullWhenValueDoesntExist() {
+        val json = "[{\"key\": null}]"
+        val result = JSONArray(json).read<Int>("$[0].key2")
+        assertNull(result)
+    }
+
+    @Test
+    fun shouldBeStringCollection() {
+        val result = JsonPath("$[0].tags").readFromJson<List<String>>(LARGE_JSON)
+        assertEquals(listOf("occaecat","mollit","ullamco","labore","cillum","laboris","qui"), result)
+    }
+
+    @Test
+    fun shouldBeIntCollection() {
+        val result = JsonPath("$[5].nums").readFromJson<List<Long>>(LARGE_JSON)
+        assertEquals(listOf(1,2,3,4,5), result)
+    }
+
+    @Test
+    fun shouldBeJSONArray() {
+        // array in json has objects/arrays within, so should return JSONArray
+        val result = JsonPath("$[0].friends").readFromJson<JSONArray>(LARGE_JSON)?.toString()
+        assertEquals(JSONArray(LARGE_JSON).getJSONObject(0).getJSONArray("friends").toString(0), result.toString())
+    }
+
+    @Test
+    fun shouldBeJSONObject() {
+        val result = JsonPath("$[0]").readFromJson<JSONObject>(LARGE_JSON)?.toString()
+        assertEquals(JSONArray(LARGE_JSON).getJSONObject(0).toString(0), result.toString())
     }
 }

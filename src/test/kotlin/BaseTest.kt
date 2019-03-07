@@ -343,6 +343,8 @@ open class BaseTest {
                 "    ],\n" +
                 "    \"greeting\": \"Hello, Margret Quinn! You have 2 unread messages.\",\n" +
                 "    \"favoriteFruit\": \"strawberry\"\n" +
+                "  },{\n" +
+                "       nums: [1,2,3,4,5]\n" +
                 "  }\n" +
                 "]"
     }
