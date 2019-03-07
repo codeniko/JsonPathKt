@@ -16,8 +16,6 @@ class BenchmarkTest : BaseTest() {
         @JvmStatic
         @BeforeAll
         fun setupClass() {
-            val yo = JsonPath("$")
-
             println("Setting up BenchmarkTest")
 
             // disable JsonPath cache for fair benchmarks
