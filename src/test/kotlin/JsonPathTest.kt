@@ -7,7 +7,6 @@ import org.json.JSONObject
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import java.util.*
 
 class JsonPathTest : BaseTest() {
 
@@ -147,5 +146,36 @@ class JsonPathTest : BaseTest() {
     fun shouldBeJSONObject() {
         val result = JsonPath("$[0]").readFromJson<JSONObject>(LARGE_JSON)?.toString()
         assertEquals(JSONArray(LARGE_JSON).getJSONObject(0).toString(0), result.toString())
+    }
+
+    @Test
+    fun shouldDeepScanStringListResults() {
+        val expected = setOf("Salazar Casey","Kathrine Osborn","Vonda Howe","Harrell Pratt","Porter Cummings",
+            "Mason Leach","Spencer Valenzuela","Hope Medina","Marie Hampton","Felecia Bright",
+            "Maryanne Wiggins","Marylou Caldwell","Mari Pugh","Rios Norton","Judy Good","Rosetta Stanley",
+            "Margret Quinn","Lora Cotton","Gaines Henry","Dorothea Irwin")
+        val result = JsonPath("$..name").readFromJson<List<String>>(LARGE_JSON)
+        assertEquals(expected, result!!.toSet())
+    }
+
+    @Test
+    fun shouldDeepScanDoubleListResults() {
+        val expected = listOf(-85.888651, 71.831798, 78.266157, -10.214391, 32.293366)
+        val result = JsonPath("$..latitude").readFromJson<List<String>>(LARGE_JSON)
+        assertEquals(expected, result)
+    }
+
+    @Test
+    fun shouldDeepScanArrayResult() {
+        val expected = "[[\"occaecat\",\"mollit\",\"ullamco\",\"labore\",\"cillum\",\"laboris\",\"qui\"],[\"aliquip\",\"cillum\",\"qui\",\"ut\",\"ea\",\"eu\",\"reprehenderit\"],[\"nulla\",\"elit\",\"ipsum\",\"pariatur\",\"ullamco\",\"ut\",\"sint\"],[\"fugiat\",\"sit\",\"ad\",\"voluptate\",\"officia\",\"aute\",\"duis\"],[\"est\",\"dolor\",\"dolore\",\"exercitation\",\"minim\",\"dolor\",\"pariatur\"]]"
+        val result = JsonPath("$..tags").readFromJson<JSONArray>(LARGE_JSON)
+        assertEquals(expected, result.toString())
+    }
+
+    @Test
+    fun shouldDeepScanStringListResultsFromLongerPath() {
+        val expected = setOf("Felecia Bright", "Maryanne Wiggins", "Marylou Caldwell", "Marie Hampton")
+        val result = JsonPath("$[2]..name").readFromJson<List<String>>(LARGE_JSON)
+        assertEquals(expected, result!!.toSet())
     }
 }

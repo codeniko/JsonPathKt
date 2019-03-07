@@ -29,6 +29,40 @@ class JsonPath(path: String) {
             } else null
         }
     }
+    private data class DeepScanToken(val targetKey: String) : Token {
+        private val results = JSONArray()
+
+        private fun scan(jsonValue: Any) {
+            when (jsonValue) {
+                is JSONObject -> {
+                    jsonValue.keySet().forEach { objKey ->
+                        val objValue = jsonValue.get(objKey)
+                        if (objKey == targetKey) {
+                            results.put(objValue)
+                        }
+                        if (objValue is JSONObject || objValue is JSONArray) {
+                            scan(objValue)
+                        }
+                    }
+                }
+                is JSONArray -> {
+                    val it = jsonValue.iterator()
+                    while (it.hasNext()) {
+                        val value = it.next()
+                        if (value is JSONObject || value is JSONArray) {
+                            scan(value)
+                        }
+                    }
+                }
+                else -> {}
+            }
+        }
+
+        override fun read(json: Any): Any? {
+            scan(json)
+            return results
+        }
+    }
     private interface Token {
         fun read(json: Any): Any? // takes in JSONObject/JSONArray and outputs next JSONObject/JSONArray or value
     }
@@ -115,13 +149,27 @@ class JsonPath(path: String) {
         var isObjectAccessor = false
         var isArrayAccessor = false
         var expectingClosingQuote = false
+        var isDeepScan = false
         val keyBuilder = StringBuilder()
+
+        fun resetForNextToken() {
+            isObjectAccessor = false
+            isArrayAccessor = false
+            expectingClosingQuote = false
+            isDeepScan = false
+            keyBuilder.clear()
+        }
 
         fun addObjectAccessorToken() {
             if (keyBuilder.isEmpty()) {
                 throw IllegalArgumentException("Object key is empty in path")
             }
-            tokens.add(ObjectAccessorToken(keyBuilder.toString()))
+            val key = keyBuilder.toString()
+            if (isDeepScan) {
+                tokens.add(DeepScanToken(key))
+            } else {
+                tokens.add(ObjectAccessorToken(key))
+            }
         }
         fun addArrayAccessorToken() {
             if (keyBuilder.isEmpty()) {
@@ -144,14 +192,18 @@ class JsonPath(path: String) {
                 val c = path[i]
                 when {
                     c == '.' && !expectingClosingQuote -> {
+                        // first check if it's followed by another dot. This means the following key will be used in deep scan
+                        if (path[i + 1] == '.') {
+                            isDeepScan = true
+                            ++i
+                        }
                         if (isObjectAccessor || isArrayAccessor) {
                             if (keyBuilder.isEmpty()) {
                                 // accessor symbol immediately after another access symbol, error
                                 throw IllegalArgumentException("Unexpected char, char=$c, index=$i")
                             } else {
                                 addAccessorToken()
-                                keyBuilder.clear()
-                                isArrayAccessor = false
+                                resetForNextToken()
                             }
                         }
                         isObjectAccessor = true
@@ -163,9 +215,7 @@ class JsonPath(path: String) {
                                 throw IllegalArgumentException("Unexpected char, char=$c, index=$i")
                             } else {
                                 addObjectAccessorToken()
-                                keyBuilder.clear()
-                                isObjectAccessor = false
-                                isArrayAccessor = false
+                                resetForNextToken()
                             }
                         }
                         if (path[i + 1] == '\'') {
@@ -184,10 +234,8 @@ class JsonPath(path: String) {
                             throw IllegalArgumentException("Key is empty string")
                         }
                         ++i // skip closing bracket
-                        expectingClosingQuote = false
-                        isObjectAccessor = false
                         addObjectAccessorToken()
-                        keyBuilder.clear()
+                        resetForNextToken()
                     }
                     c == ']' && !expectingClosingQuote -> {
                         if (!isArrayAccessor) {
@@ -196,9 +244,8 @@ class JsonPath(path: String) {
                         if (expectingClosingQuote) {
                             throw IllegalArgumentException("Expecting closing single quote before closing bracket in path")
                         }
-                        isArrayAccessor = false
                         addArrayAccessorToken()
-                        keyBuilder.clear()
+                        resetForNextToken()
                     }
                     c.isDigit() && isArrayAccessor -> keyBuilder.append(c)
                     isObjectAccessor -> keyBuilder.append(c)
