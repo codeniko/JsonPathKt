@@ -7,85 +7,27 @@ import org.json.JSONObject
 
 class JsonPath(path: String) {
 
-    private data class ArrayAccessorToken(val index: Int, val fromLast: Boolean) : Token {
-        override fun read(json: Any): Any? {
-            if (json is JSONArray) {
-                if (fromLast && index > 0) {
-                    // optimized to get array length only if we're accessing from last
-                    val indexFromLast = json.length() - index
-                    if (indexFromLast >= 0) {
-                        return json.opt(indexFromLast)
-                    }
-                }
-                return json.opt(index)
-            }
-            return null
-        }
-    }
-    private data class ObjectAccessorToken(val key: String) : Token {
-        override fun read(json: Any): Any? {
-            return if (json is JSONObject) {
-                json.opt(key)
-            } else null
-        }
-    }
-    private data class DeepScanToken(val targetKey: String) : Token {
-        private val results = JSONArray()
-
-        private fun scan(jsonValue: Any) {
-            when (jsonValue) {
-                is JSONObject -> {
-                    jsonValue.keySet().forEach { objKey ->
-                        val objValue = jsonValue.opt(objKey)
-                        if (objKey == targetKey) {
-                            results.put(objValue)
-                        }
-                        if (objValue is JSONObject || objValue is JSONArray) {
-                            scan(objValue)
-                        }
-                    }
-                }
-                is JSONArray -> {
-                    val it = jsonValue.iterator()
-                    while (it.hasNext()) {
-                        val value = it.next()
-                        if (value is JSONObject || value is JSONArray) {
-                            scan(value)
-                        }
-                    }
-                }
-                else -> {}
-            }
-        }
-
-        override fun read(json: Any): Any? {
-            scan(json)
-            return results
-        }
-    }
-    private interface Token {
-        fun read(json: Any): Any? // takes in JSONObject/JSONArray and outputs next JSONObject/JSONArray or value
-    }
-
     private val path: String
     private val tokens: List<Token>
 
+    /**
+     * Trim given path string and compile it on initialization
+     */
     init {
         this.path = path.trim()
-        tokens = compile()
-
-        if (tokens.isEmpty()) {
-            // todo?
-        }
+        tokens = PathCompiler.compile(this.path)
     }
 
     /**
-     * Read the value at path in given JSON
+     * Read the value at path in given JSON string
      *
      * @return Given type if value in path exists, null otherwise
      */
     fun <T : Any> readFromJson(jsonString: String): T? {
-        // given string, we need to find if it's json object or array
+        /*
+        We don't need to parse this string into own JsonResult wrapper as we don't need those convenience methods at this point.
+        Use org.json directly based on first character of given string. Also pass it to private readFromJson method directly to skip a stack frame
+         */
         val trimmedJson = jsonString.trim()
         return when (trimmedJson.firstOrNull()) {
             '{' -> _readFromJson(JSONObject(trimmedJson))
@@ -95,14 +37,14 @@ class JsonPath(path: String) {
     }
 
     /**
-     * Read the value at path in given JSON
+     * Read the value at path in given JSON Object
      *
      * @return Given type if value in path exists, null otherwise
      */
     fun <T : Any> readFromJson(jsonObject: JSONObject): T? = _readFromJson(jsonObject)
 
     /**
-     * Read the value at path in given JSON
+     * Read the value at path in given JSON Array
      *
      * @return Given type if value in path exists, null otherwise
      */
@@ -123,6 +65,9 @@ class JsonPath(path: String) {
         return valueAtPath as? T
     }
 
+    /**
+     * Check if a JSONArray contains only primitive values (in this case, non-JSONObject/JSONArray).
+     */
     private fun containsOnlyPrimitives(jsonArray: JSONArray) : Boolean {
         val it = jsonArray.iterator()
         while (it.hasNext()) {
@@ -134,162 +79,18 @@ class JsonPath(path: String) {
         return true
     }
 
-    /**
-     * Compile jsonpath
-     */
-    @Throws(IllegalArgumentException::class)
-    private fun compile(): List<Token> {
-
-        val tokens = mutableListOf<Token>()
-
-        if (path.firstOrNull() != '$') {
-            throw IllegalArgumentException("First character in path must be '$' root token")
-        }
-
-        var isObjectAccessor = false
-        var isArrayAccessor = false
-        var isNegativeArrayAccessor = false // supplements isArrayAccessor
-        var expectingClosingQuote = false
-        var isDeepScan = false // supplements isObjectAccessor
-        val keyBuilder = StringBuilder()
-
-        fun resetForNextToken() {
-            isObjectAccessor = false
-            isArrayAccessor = false
-            isNegativeArrayAccessor = false
-            expectingClosingQuote = false
-            isDeepScan = false
-            keyBuilder.clear()
-        }
-
-        fun addObjectAccessorToken() {
-            if (keyBuilder.isEmpty()) {
-                throw IllegalArgumentException("Object key is empty in path")
-            }
-            val key = keyBuilder.toString()
-            if (isDeepScan) {
-                tokens.add(DeepScanToken(key))
-            } else {
-                tokens.add(ObjectAccessorToken(key))
-            }
-        }
-        fun addArrayAccessorToken() {
-            if (keyBuilder.isEmpty()) {
-                throw IllegalArgumentException("Index of array is empty in path")
-            }
-            tokens.add(ArrayAccessorToken(keyBuilder.toString().toInt(10), isNegativeArrayAccessor))
-        }
-        fun addAccessorToken() {
-            if (isObjectAccessor) {
-                addObjectAccessorToken()
-            } else {
-                addArrayAccessorToken()
-            }
-        }
-
-        val len = path.length
-        var i = 1
-        try {
-            while (i < len) {
-                val c = path[i]
-                val next = path.getOrNull(i + 1)
-                when {
-                    c == '.' && !expectingClosingQuote -> {
-                        if (isObjectAccessor || isArrayAccessor) {
-                            if (keyBuilder.isEmpty()) {
-                                // accessor symbol immediately after another access symbol, error
-                                throw IllegalArgumentException("Unexpected char, char=$c, index=$i")
-                            } else {
-                                addAccessorToken()
-                                resetForNextToken()
-                            }
-                        }
-                        // check if it's followed by another dot. This means the following key will be used in deep scan
-                        if (next == '.') {
-                            isDeepScan = true
-                            ++i
-                        }
-                        isObjectAccessor = true
-                    }
-                    c == '[' && !expectingClosingQuote -> {
-                        if (isObjectAccessor || isArrayAccessor) {
-                            if (keyBuilder.isEmpty()) {
-                                // accessor symbol immediately after another access symbol, error
-                                throw IllegalArgumentException("Unexpected char, char=$c, index=$i")
-                            } else {
-                                addObjectAccessorToken()
-                                resetForNextToken()
-                            }
-                        }
-                        when (next) {
-                            '\'' -> {
-                                ++i // skip already checked single quote
-                                isObjectAccessor = true
-                                expectingClosingQuote = true
-                            }
-                            '-' -> {
-                                ++i
-                                isArrayAccessor = true
-                                isNegativeArrayAccessor = true
-                            }
-                            else -> isArrayAccessor = true
-                        }
-                    }
-                    c == '\'' && expectingClosingQuote -> { // only valid inside array bracket and ending
-                        if (next != ']') {
-                            throw IllegalArgumentException("Expecting closing array bracket in path, index=${i+1}")
-                        }
-                        if (keyBuilder.length == 0) {
-                            throw IllegalArgumentException("Key is empty string")
-                        }
-                        ++i // skip closing bracket
-                        addObjectAccessorToken()
-                        resetForNextToken()
-                    }
-                    c == ']' && !expectingClosingQuote -> {
-                        if (!isArrayAccessor) {
-                            throw IllegalArgumentException("Unexpected char, char=$c, index=$i")
-                        }
-                        if (expectingClosingQuote) {
-                            throw IllegalArgumentException("Expecting closing single quote before closing bracket in path")
-                        }
-                        addArrayAccessorToken()
-                        resetForNextToken()
-                    }
-                    c.isDigit() && isArrayAccessor -> keyBuilder.append(c)
-                    isObjectAccessor -> keyBuilder.append(c)
-                    else -> throw IllegalArgumentException("Unexpected char, char=$c, index=$i")
-                }
-                ++i
-            }
-
-            // Object accessor is the only one able to `true` at this point
-            if (expectingClosingQuote || isArrayAccessor) {
-                throw IllegalArgumentException("Expecting closing array in path at end")
-            }
-
-            if (keyBuilder.isNotEmpty()) {
-                if (isObjectAccessor) {
-                    addObjectAccessorToken()
-                } else {
-                    throw IllegalArgumentException("Expecting closing array in path at end")
-                }
-            }
-        } catch (e: IndexOutOfBoundsException) {
-            throw IllegalArgumentException("Path is invalid")
-        }
-
-        return tokens.toList()
-    }
-
     @TestOnly
-    fun printTokens() {
+    internal fun printTokens() {
         println("Tokens: " + tokens.toString())
     }
 
     companion object {
         /**
-         * Parse json string and return [JsonResult] or throw [JSONException] on parsing error
+         * Parse JSON string and return successful [JsonResult] or throw [JSONException] on parsing error
+         *
+         * @param jsonString JSON string to parse
+         * @return instance of parsed [JsonResult] object
+         * @throws JSONException
          */
         @Throws(JSONException::class)
         fun parse(jsonString: String): JsonResult = when {
@@ -299,7 +100,10 @@ class JsonPath(path: String) {
         }
 
         /**
-         * Parse JSON string and return [JsonResult] or null otherwise
+         * Parse JSON string and return successful [JsonResult] or null otherwise
+         * 
+         * @param jsonString JSON string to parse
+         * @return instance of parsed [JsonResult] object or null
          */
         fun parseOrNull(jsonString: String): JsonResult? {
             return jsonString.firstOrNull()?.run {
