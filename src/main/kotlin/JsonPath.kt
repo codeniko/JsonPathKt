@@ -7,15 +7,21 @@ import org.json.JSONObject
 
 class JsonPath(path: String) {
 
-    private data class ArrayAccessorToken(val index: Int) : Token {
+    private data class ArrayAccessorToken(val index: Int, val fromLast: Boolean) : Token {
         override fun read(json: Any): Any? {
-            return if (json is JSONArray) {
+            if (json is JSONArray) {
                 try {
-                    json.get(index)
-                } catch (e: JSONException) {
-                    null
-                }
-            } else null
+                    if (fromLast && index > 0) {
+                        // optimized to get array length only if we're accessing from last
+                        val indexFromLast = json.length() - index
+                        if (indexFromLast >= 0) {
+                            return json.get(indexFromLast)
+                        }
+                    }
+                    return json.get(index)
+                } catch (e: JSONException) { }
+            }
+            return null
         }
     }
     private data class ObjectAccessorToken(val key: String) : Token {
@@ -148,13 +154,15 @@ class JsonPath(path: String) {
 
         var isObjectAccessor = false
         var isArrayAccessor = false
+        var isNegativeArrayAccessor = false // supplements isArrayAccessor
         var expectingClosingQuote = false
-        var isDeepScan = false
+        var isDeepScan = false // supplements isObjectAccessor
         val keyBuilder = StringBuilder()
 
         fun resetForNextToken() {
             isObjectAccessor = false
             isArrayAccessor = false
+            isNegativeArrayAccessor = false
             expectingClosingQuote = false
             isDeepScan = false
             keyBuilder.clear()
@@ -175,7 +183,7 @@ class JsonPath(path: String) {
             if (keyBuilder.isEmpty()) {
                 throw IllegalArgumentException("Index of array is empty in path")
             }
-            tokens.add(ArrayAccessorToken(keyBuilder.toString().toInt(10)))
+            tokens.add(ArrayAccessorToken(keyBuilder.toString().toInt(10), isNegativeArrayAccessor))
         }
         fun addAccessorToken() {
             if (isObjectAccessor) {
@@ -190,13 +198,9 @@ class JsonPath(path: String) {
         try {
             while (i < len) {
                 val c = path[i]
+                val next = path.getOrNull(i + 1)
                 when {
                     c == '.' && !expectingClosingQuote -> {
-                        // first check if it's followed by another dot. This means the following key will be used in deep scan
-                        if (path[i + 1] == '.') {
-                            isDeepScan = true
-                            ++i
-                        }
                         if (isObjectAccessor || isArrayAccessor) {
                             if (keyBuilder.isEmpty()) {
                                 // accessor symbol immediately after another access symbol, error
@@ -205,6 +209,11 @@ class JsonPath(path: String) {
                                 addAccessorToken()
                                 resetForNextToken()
                             }
+                        }
+                        // check if it's followed by another dot. This means the following key will be used in deep scan
+                        if (next == '.') {
+                            isDeepScan = true
+                            ++i
                         }
                         isObjectAccessor = true
                     }
@@ -218,16 +227,22 @@ class JsonPath(path: String) {
                                 resetForNextToken()
                             }
                         }
-                        if (path[i + 1] == '\'') {
-                            ++i // skip already checked single quote
-                            isObjectAccessor = true
-                            expectingClosingQuote = true
-                        } else {
-                            isArrayAccessor = true
+                        when (next) {
+                            '\'' -> {
+                                ++i // skip already checked single quote
+                                isObjectAccessor = true
+                                expectingClosingQuote = true
+                            }
+                            '-' -> {
+                                ++i
+                                isArrayAccessor = true
+                                isNegativeArrayAccessor = true
+                            }
+                            else -> isArrayAccessor = true
                         }
                     }
                     c == '\'' && expectingClosingQuote -> { // only valid inside array bracket and ending
-                        if (path[i + 1] != ']') {
+                        if (next != ']') {
                             throw IllegalArgumentException("Expecting closing array bracket in path, index=${i+1}")
                         }
                         if (keyBuilder.length == 0) {

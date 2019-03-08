@@ -178,4 +178,22 @@ class JsonPathTest : BaseTest() {
         val result = JsonPath("$[2]..name").readFromJson<List<String>>(LARGE_JSON)
         assertEquals(expected, result!!.toSet())
     }
+
+    @Test
+    fun shouldBeLastItemInArray() {
+        val result = JsonPath("$[0]['tags'][-1]").readFromJson<String>(LARGE_JSON)
+        assertEquals("qui", result)
+    }
+
+    @Test
+    fun shouldBeThirdToLastItemInArray() {
+        val result = JsonPath("$[0]['tags'][-3]").readFromJson<String>(LARGE_JSON)
+        assertEquals("cillum", result)
+    }
+
+    @Test
+    fun shouldBeFirstItemInArray() {
+        val result = JsonPath("$[0]['tags'][-0]").readFromJson<String>(LARGE_JSON)
+        assertEquals("occaecat", result)
+    }
 }
