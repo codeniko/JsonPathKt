@@ -11,7 +11,7 @@ class BenchmarkTest : BaseTest() {
 
     companion object {
         private const val DEFAULT_RUNS = 30
-        private const val DEFAULT_CALLS_PER_RUN = 130000
+        private const val DEFAULT_CALLS_PER_RUN = 80000
 
         @JvmStatic
         @BeforeAll
@@ -44,29 +44,29 @@ class BenchmarkTest : BaseTest() {
         return times.average().toLong()
     }
 
-    private fun benchmarkJsonPathLite(path: String): Long {
+    private fun benchmarkJsonPathLite(path: String, callsPerRun: Int = DEFAULT_CALLS_PER_RUN, runs: Int = DEFAULT_RUNS): Long {
         val jsonArray = JSONArray(LARGE_JSON) // pre-parse json
-        return benchmark { jsonArray.read<String>(path) }
+        return benchmark(callsPerRun, runs) { jsonArray.read<String>(path) }
     }
 
-    private fun benchmarkJsonPath(path: String): Long {
+    private fun benchmarkJsonPath(path: String, callsPerRun: Int = DEFAULT_CALLS_PER_RUN, runs: Int = DEFAULT_RUNS): Long {
         val documentContext = com.jayway.jsonpath.JsonPath.parse(LARGE_JSON) // pre-parse json
-        return benchmark { documentContext.read<String>(path) }
+        return benchmark(callsPerRun, runs) { documentContext.read<String>(path) }
     }
 
-    private fun runBenchmarksAndPrintResults(path: String) {
-        val lite = benchmarkJsonPathLite(path)
-        val other = benchmarkJsonPath(path)
+    private fun runBenchmarksAndPrintResults(path: String, callsPerRun: Int = DEFAULT_CALLS_PER_RUN, runs: Int = DEFAULT_RUNS) {
+        val lite = benchmarkJsonPathLite(path, callsPerRun, runs)
+        val other = benchmarkJsonPath(path, callsPerRun, runs)
         println("$path   lite: ${lite}, jsonpath: ${other}")
     }
 
     @Test
-    fun benchmarkDeep() {
+    fun benchmarkDeepPath() {
         runBenchmarksAndPrintResults("$[0].friends[1].other.a.b['c']")
     }
 
     @Test
-    fun benchmarkShallow() {
+    fun benchmarkShallowPath() {
         runBenchmarksAndPrintResults("$[2]._id")
     }
 
@@ -86,5 +86,18 @@ class BenchmarkTest : BaseTest() {
         lite = benchmark { JsonPath("$[0].friends[1].other.a.b['c'][5].niko[2].hello.world[6][9][0].id") }
         other = benchmark { com.jayway.jsonpath.JsonPath.compile("$[0].friends[1].other.a.b['c'][5].niko[2].hello.world[6][9][0].id") }
         println("long path compile time     lite: ${lite}, jsonpath: ${other}")
+    }
+
+    @Test
+    fun benchmarkDeepScan() {
+        val callsPerRun = 20000
+        val runs = 10
+        runBenchmarksAndPrintResults("$..tags", callsPerRun, runs)
+        runBenchmarksAndPrintResults("$..name", callsPerRun, runs)
+    }
+
+    @Test
+    fun benchmarkFromLastArrayAccess() {
+        runBenchmarksAndPrintResults("$[0]['tags'][-3]")
     }
 }
