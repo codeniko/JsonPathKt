@@ -10,16 +10,14 @@ class JsonPath(path: String) {
     private data class ArrayAccessorToken(val index: Int, val fromLast: Boolean) : Token {
         override fun read(json: Any): Any? {
             if (json is JSONArray) {
-                try {
-                    if (fromLast && index > 0) {
-                        // optimized to get array length only if we're accessing from last
-                        val indexFromLast = json.length() - index
-                        if (indexFromLast >= 0) {
-                            return json.get(indexFromLast)
-                        }
+                if (fromLast && index > 0) {
+                    // optimized to get array length only if we're accessing from last
+                    val indexFromLast = json.length() - index
+                    if (indexFromLast >= 0) {
+                        return json.opt(indexFromLast)
                     }
-                    return json.get(index)
-                } catch (e: JSONException) { }
+                }
+                return json.opt(index)
             }
             return null
         }
@@ -27,11 +25,7 @@ class JsonPath(path: String) {
     private data class ObjectAccessorToken(val key: String) : Token {
         override fun read(json: Any): Any? {
             return if (json is JSONObject) {
-                try {
-                    json.get(key)
-                } catch (e: JSONException) {
-                    null
-                }
+                json.opt(key)
             } else null
         }
     }
@@ -42,7 +36,7 @@ class JsonPath(path: String) {
             when (jsonValue) {
                 is JSONObject -> {
                     jsonValue.keySet().forEach { objKey ->
-                        val objValue = jsonValue.get(objKey)
+                        val objValue = jsonValue.opt(objKey)
                         if (objKey == targetKey) {
                             results.put(objValue)
                         }
