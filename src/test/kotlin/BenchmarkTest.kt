@@ -100,4 +100,29 @@ class BenchmarkTest : BaseTest() {
     fun benchmarkFromLastArrayAccess() {
         runBenchmarksAndPrintResults("$[0]['tags'][-3]")
     }
+
+    @Test
+    fun benchmarkArrayRangeFromStart() {
+        runBenchmarksAndPrintResults("$[0]['tags'][:3]")
+    }
+
+    @Test
+    fun benchmarkArrayRangeToEnd() {
+        runBenchmarksAndPrintResults("$[0]['tags'][3:]")
+    }
+
+    @Test
+    fun benchmarkArrayRange() {
+        runBenchmarksAndPrintResults("$[0]['tags'][3:5]")
+    }
+
+    @Test
+    fun benchmarkMultiArrayAccess() {
+        runBenchmarksAndPrintResults("$[0]['tags'][0,3, 5]")
+    }
+
+    @Test
+    fun benchmarkMultiObjectAccess() {
+        runBenchmarksAndPrintResults("$[0]['latitude','longitude', 'isActive']")
+    }
 }

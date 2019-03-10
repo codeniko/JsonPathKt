@@ -101,7 +101,7 @@ class JsonPath(path: String) {
 
         /**
          * Parse JSON string and return successful [JsonResult] or null otherwise
-         * 
+         *
          * @param jsonString JSON string to parse
          * @return instance of parsed [JsonResult] object or null
          */

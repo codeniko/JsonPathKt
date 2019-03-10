@@ -196,4 +196,40 @@ class JsonPathTest : BaseTest() {
         val result = JsonPath("$[0]['tags'][-0]").readFromJson<String>(LARGE_JSON)
         assertEquals("occaecat", result)
     }
+
+    @Test
+    fun shouldGetArrayRangeFromStart() {
+        val result = JsonPath("$[0]['tags'][:3]").readFromJson<List<String>>(LARGE_JSON)
+        assertEquals(listOf("occaecat","mollit","ullamco"), result)
+    }
+
+    @Test
+    fun shouldGetArrayRangeFromToEnd() {
+        val result = JsonPath("$[0]['tags'][5:]").readFromJson<List<String>>(LARGE_JSON)
+        println(PathCompiler.compile("$[0]['tags'][5:]"))
+        assertEquals(listOf("laboris","qui"), result)
+    }
+
+    @Test
+    fun shouldGetArrayRange() {
+        val result = JsonPath("$[0]['tags'][3:5]").readFromJson<List<String>>(LARGE_JSON)
+        assertEquals(listOf("labore","cillum"), result)
+    }
+
+    @Test
+    fun shouldBeMultiArray() {
+        val result = JsonPath("$[0]['tags'][0, 3,5]").readFromJson<List<String>>(LARGE_JSON)
+        assertEquals(listOf("occaecat","labore","laboris"), result)
+    }
+
+    @Test
+    fun shouldBeMultiObject() {
+        val result = JsonPath("$[0]['latitude','longitude', 'isActive']").readFromJson<JSONObject>(LARGE_JSON)
+        val expected = JSONObject().apply {
+            put("latitude", -85.888651)
+            put("longitude", 38.287152)
+            put("isActive", true)
+        }.toString()
+        assertEquals(expected, result.toString())
+    }
 }
