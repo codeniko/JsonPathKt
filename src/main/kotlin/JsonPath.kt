@@ -1,6 +1,5 @@
 package com.nfeld.jsonpathlite
 
-import org.jetbrains.annotations.TestOnly
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
@@ -77,11 +76,6 @@ class JsonPath(path: String) {
             }
         }
         return true
-    }
-
-    @TestOnly
-    internal fun printTokens() {
-        println("Tokens: " + tokens.toString())
     }
 
     companion object {
