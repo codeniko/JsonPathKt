@@ -10,6 +10,8 @@ import org.junit.jupiter.api.assertThrows
 
 class JsonPathTest : BaseTest() {
 
+    //        val result = com.jayway.jsonpath.JsonPath.parse(LARGE_JSON).read<List<String>>("$..name")
+
     // JsonPath::parse related tests
     @Test
     fun shouldParseJsonObject() {

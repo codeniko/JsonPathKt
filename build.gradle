@@ -25,14 +25,6 @@ compileTestKotlin {
     kotlinOptions.jvmTarget = "1.8"
 }
 
-sourceSets {
-    test {
-        java {
-            srcDir 'src/test/kotlin'
-        }
-    }
-}
-
 test {
     // Make this task never up to date, thus forcing rerun of all tests whenever task is run
     outputs.upToDateWhen { false }
@@ -88,7 +80,7 @@ jacocoTestReport {
     reports {
         xml.enabled = true
         html.enabled = true
-        csv.enabled = true
+        csv.enabled = false
     }
 }
 
