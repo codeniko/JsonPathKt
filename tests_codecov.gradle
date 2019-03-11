@@ -1,0 +1,83 @@
+dependencies {
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.4.0'
+    testImplementation 'com.jayway.jsonpath:json-path:2.4.0'
+}
+
+compileTestKotlin {
+    kotlinOptions.jvmTarget = "1.8"
+}
+
+test {
+    // Make this task never up to date, thus forcing rerun of all tests whenever task is run
+    outputs.upToDateWhen { false }
+
+    // enable junit 5
+    useJUnitPlatform()
+
+    testLogging {
+        // show test results for following events
+        events 'PASSED', 'FAILED', 'SKIPPED'
+
+        // show printlines
+        showStandardStreams = true
+    }
+
+    // show test summary at end
+    afterSuite { desc, result ->
+        if (!desc.parent) {
+            println "\nTest result: ${result.resultType}"
+            println "Test summary: ${result.testCount} tests, " +
+                    "${result.successfulTestCount} succeeded, " +
+                    "${result.failedTestCount} failed, " +
+                    "${result.skippedTestCount} skipped"
+        }
+    }
+
+    // code coverage
+    jacoco {
+        append = false
+        destinationFile = file("$buildDir/jacoco/junitPlatformTest.exec")
+        includeNoLocationClasses = true
+    }
+
+    finalizedBy jacocoTestReport
+}
+
+jacoco {
+    toolVersion = "0.8.3"
+    reportsDir = file("$buildDir/reports")
+}
+
+jacocoTestReport {
+    group = "Reporting"
+    description = "Generate Jacoco coverage report."
+    classDirectories = fileTree(
+            dir: "$buildDir/classes/kotlin/main"
+    )
+    def coverageSourceDirs = [
+            "src/main/kotlin"
+    ]
+    additionalSourceDirs = files(coverageSourceDirs)
+    sourceDirectories = files(coverageSourceDirs)
+    executionData = files("$buildDir/jacoco/junitPlatformTest.exec")
+    reports {
+        xml.enabled = true
+        html.enabled = true
+        csv.enabled = false
+    }
+}
+
+check.dependsOn jacocoTestCoverageVerification
+
+jacocoTestCoverageVerification {
+    violationRules {
+        rule {
+            // element = 'CLASS'
+            limit {
+                counter = 'LINE'
+                value = 'COVEREDRATIO'
+                minimum = 0.95
+            }
+        }
+    }
+}
