@@ -23,3 +23,38 @@ compileKotlin {
 compileTestKotlin {
     kotlinOptions.jvmTarget = "1.8"
 }
+
+sourceSets {
+    test {
+        java {
+            srcDir 'src/test/kotlin'
+        }
+    }
+}
+
+test {
+    // Make this task never up to date, thus forcing rerun of all tests whenever task is run
+    outputs.upToDateWhen { false }
+    
+    // enable junit 5
+    useJUnitPlatform()
+    
+    testLogging {
+        // show test results for following events
+        events 'PASSED', 'FAILED', 'SKIPPED'
+        
+        // show printlines
+        showStandardStreams = true
+    }
+
+    // show test summary at end
+    afterSuite { desc, result ->
+        if (!desc.parent) {
+            println "\nTest result: ${result.resultType}"
+            println "Test summary: ${result.testCount} tests, " +
+                    "${result.successfulTestCount} succeeded, " +
+                    "${result.failedTestCount} failed, " +
+                    "${result.skippedTestCount} skipped"
+        }
+    }
+}
