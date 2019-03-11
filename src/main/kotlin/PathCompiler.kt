@@ -140,7 +140,6 @@ object PathCompiler {
         //TODO handle escaped chars
         while (i < closingIndex) {
             val c = path[i]
-            val next = path[i + 1]
 
             when {
                 c == ' ' && !expectingClosingQuote -> {
@@ -213,19 +212,26 @@ object PathCompiler {
                 isRange -> {
                     val start = keys[0].toInt(10)
                     val end = keys[1].toInt(10) // exclusive
-                    token = MultiArrayAccessorToken(IntRange(start, end - 1).toList())
+                    val isEndNegative = end < 0
+                    token = if (start < 0 || isEndNegative) {
+                        val offsetFromEnd = if (isEndNegative) end else 0
+                        val endIndex = if (!isEndNegative) end else null
+                        ArrayLengthBasedRangeAccessorToken(start, endIndex, offsetFromEnd)
+                    } else {
+                        MultiArrayAccessorToken(IntRange(start, end - 1).toList())
+                    }
                 }
                 hasStartColon -> {
                     val end = keys[0].toInt(10) // exclusive
                     token = if (end < 0) {
-                        ArrayToEndAccessorToken(0, -1)
+                        ArrayLengthBasedRangeAccessorToken(0, null, end)
                     } else {
                         MultiArrayAccessorToken(IntRange(0, end - 1).toList())
                     }
                 }
                 hasEndColon -> {
                     val start = keys[0].toInt(10)
-                    token = ArrayToEndAccessorToken(start)
+                    token = ArrayLengthBasedRangeAccessorToken(start)
                 }
                 keys.size == 1 -> token = ArrayAccessorToken(keys[0].toInt(10))
                 keys.size > 1 -> token = MultiArrayAccessorToken(keys.map { it.toInt(10) })

@@ -40,7 +40,7 @@ class PathCompilerTest : BaseTest() {
         assertEquals(ArrayAccessorToken(0), f(findClosingIndex("$[0]"), start, end))
         assertEquals(ArrayAccessorToken(-4), f(findClosingIndex("$[-4]"), start, end))
         assertEquals(MultiArrayAccessorToken(listOf(0,1,2)), f(findClosingIndex("$[:3]"), start, end))
-        assertEquals(ArrayToEndAccessorToken(3,0), f(findClosingIndex("$[3:]"), start, end))
+        assertEquals(ArrayLengthBasedRangeAccessorToken(3, null,0), f(findClosingIndex("$[3:]"), start, end))
         assertEquals(MultiArrayAccessorToken(listOf(1,2,3)), f(findClosingIndex("$[1:4]"), start, end))
         assertEquals(MultiArrayAccessorToken(listOf(1,2,3)), f(findClosingIndex("$[1,2,3]"), start, end))
         assertEquals(MultiArrayAccessorToken(listOf(1,-2,3)), f(findClosingIndex("$[1,-2,3]"), start, end))
@@ -50,11 +50,14 @@ class PathCompilerTest : BaseTest() {
         assertEquals(MultiObjectAccessorToken(listOf("name", "age", "4")), f(findClosingIndex("$['name','age',4]"), start, end))
         assertEquals(ObjectAccessorToken("name:age"), f(findClosingIndex("$['name:age']"), start, end))
 
-
         // handle negative values in array ranges
-//        assertEquals(ArrayToEndAccessorToken(0,-1), f(findClosingIndex("$[:-1]"), start, end))
-//        assertEquals(ArrayToEndAccessorToken(-5,0), f(findClosingIndex("$[-5:]"), start, end))
-//        assertEquals(ArrayToEndAccessorToken(-5,-1), f(findClosingIndex("$[-5:-1]"), start, end))
+        assertEquals(ArrayLengthBasedRangeAccessorToken(0,null, -1), f(findClosingIndex("$[:-1]"), start, end))
+        assertEquals(ArrayLengthBasedRangeAccessorToken(0,null, -3), f(findClosingIndex("$[:-3]"), start, end))
+        assertEquals(ArrayLengthBasedRangeAccessorToken(-1,null, 0), f(findClosingIndex("$[-1:]"), start, end))
+        assertEquals(ArrayLengthBasedRangeAccessorToken(-5,null, 0), f(findClosingIndex("$[-5:]"), start, end))
+        assertEquals(ArrayLengthBasedRangeAccessorToken(-5,null, -1), f(findClosingIndex("$[-5:-1]"), start, end))
+        assertEquals(ArrayLengthBasedRangeAccessorToken(5,null, -1), f(findClosingIndex("$[5:-1]"), start, end))
+        assertEquals(ArrayLengthBasedRangeAccessorToken(-5,4, 0), f(findClosingIndex("$[-5:4]"), start, end))
 
         // ignore space paddings
         assertEquals(ArrayAccessorToken(0), f(findClosingIndex("$[  0  ]"), start, end))

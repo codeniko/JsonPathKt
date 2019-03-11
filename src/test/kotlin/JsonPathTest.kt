@@ -206,8 +206,46 @@ class JsonPathTest : BaseTest() {
     @Test
     fun shouldGetArrayRangeFromToEnd() {
         val result = JsonPath("$[0]['tags'][5:]").readFromJson<List<String>>(LARGE_JSON)
-        println(PathCompiler.compile("$[0]['tags'][5:]"))
         assertEquals(listOf("laboris","qui"), result)
+    }
+
+    @Test
+    fun shouldGetArrayRangeFromBeginningToEnd() {
+        val result = JsonPath("$[0]['tags'][0:]").readFromJson<List<String>>(LARGE_JSON)
+        val result2 = JsonPath("$[0]['tags']").readFromJson<List<String>>(LARGE_JSON)
+
+        assertEquals(listOf("occaecat","mollit","ullamco","labore","cillum","laboris","qui"), result)
+        assertEquals(result2, result)
+    }
+
+    @Test
+    fun shouldBeValues0To2() {
+        val result = JsonPath("$[0]['tags'][:-4]").readFromJson<List<String>>(LARGE_JSON)
+        assertEquals(listOf("occaecat","mollit","ullamco"), result)
+    }
+
+    @Test
+    fun shouldBeValues5To6() {
+        val result = JsonPath("$[0]['tags'][-2:]").readFromJson<List<String>>(LARGE_JSON)
+        assertEquals(listOf("laboris","qui"), result)
+    }
+
+    @Test
+    fun shouldBeValues4To5() {
+        val result = JsonPath("$[0]['tags'][-3:-1]").readFromJson<List<String>>(LARGE_JSON)
+        assertEquals(listOf("cillum","laboris"), result)
+    }
+
+    @Test
+    fun shouldBeValues3To5() {
+        val result = JsonPath("$[0]['tags'][3:-1]").readFromJson<List<String>>(LARGE_JSON)
+        assertEquals(listOf("labore","cillum","laboris"), result)
+    }
+
+    @Test
+    fun shouldBeValues1To3() {
+        val result = JsonPath("$[0]['tags'][-6:4]").readFromJson<List<String>>(LARGE_JSON)
+        assertEquals(listOf("mollit","ullamco","labore"), result)
     }
 
     @Test
