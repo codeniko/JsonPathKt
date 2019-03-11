@@ -171,13 +171,4 @@ internal interface Token {
      * @return [JSONObject], [JSONArray], or any JSON primitive value
      */
     fun read(json: Any): Any?
-
-//    /**
-//     * Validate the token against required conditions or throw exception during compilation
-//     * @throws IllegalArgumentException
-//     */
-//    @Throws(IllegalArgumentException::class)
-//    fun validateOrThrow()
-
-    // can make this abstract, and have init call validate
 }
