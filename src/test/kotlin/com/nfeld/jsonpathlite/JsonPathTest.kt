@@ -10,6 +10,8 @@ import org.junit.jupiter.api.assertThrows
 
 class JsonPathTest : BaseTest() {
 
+    //        val result = com.jayway.jsonpath.JsonPath.parse(LARGE_JSON).read<List<String>>("$..name")
+
     // JsonPath::parse related tests
     @Test
     fun shouldParseJsonObject() {
@@ -30,6 +32,12 @@ class JsonPathTest : BaseTest() {
         }
     }
 
+    @Test
+    fun shouldThrowWhenParsingEmptyString() {
+        assertThrows<JSONException> { JsonPath.parse("") }
+    }
+
+
     // JsonPath::parseOrNull related tests
     @Test
     fun shouldParseNotNullJsonObject() {
@@ -47,6 +55,11 @@ class JsonPathTest : BaseTest() {
     fun shouldBeNullOnParseFailure() {
         val result = JsonPath.parseOrNull("5" + SMALL_JSON_ARRAY)
         assertNull(result)
+    }
+
+    @Test
+    fun shouldBeNullWhenParsingEmptyString() {
+        assertNull(JsonPath.parseOrNull(""))
     }
 
 
@@ -269,5 +282,14 @@ class JsonPathTest : BaseTest() {
             put("isActive", true)
         }.toString()
         assertEquals(expected, result.toString())
+    }
+
+    @Test
+    fun shouldBeNull() {
+        assertNull(JsonPath("$.key").readFromJson<Int>("()"))
+        assertNull(JsonPath("$.key").readFromJson<Int>("{}"))
+        assertNull(JsonPath("$[0]").readFromJson<Int>("[]"))
+        assertNull(JsonPath("$[0]").readFromJson<Int>(""))
+        assertNull(JsonPath("$[2][0]").readFromJson<Int>("[]"))
     }
 }

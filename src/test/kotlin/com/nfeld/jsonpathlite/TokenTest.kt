@@ -1,13 +1,41 @@
 package com.nfeld.jsonpathlite
 
 import org.json.JSONArray
+import org.json.JSONObject
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
 
 class TokenTest : BaseTest() {
 
     private fun printTesting(subpath: String) {
         println("Testing like $subpath")
+    }
+
+    @Test
+    fun arrayAccessorToken() {
+        assertNull(ArrayAccessorToken(0).read(JSONObject()))
+    }
+
+    @Test
+    fun multiArrayAccessorToken() {
+        assertNull(MultiArrayAccessorToken(listOf(0)).read(JSONObject()))
+
+        val expected = JSONArray().apply {
+            put(1)
+            put(3)
+        }
+        assertEquals(expected.toString(), MultiArrayAccessorToken(listOf(0, -1)).read(JSONArray().apply {
+            put(1)
+            put(2)
+            put(3)
+        }).toString())
+    }
+
+    @Test
+    fun arrayLengthBasedRangeAccessorToken() {
+        assertNull(ArrayLengthBasedRangeAccessorToken(0).read(JSONObject()))
+        assertEquals(JSONArray().toString(), ArrayLengthBasedRangeAccessorToken(0, -1, 0).read(JSONArray()).toString())
     }
 
     @Test
@@ -60,5 +88,15 @@ class TokenTest : BaseTest() {
         res = ArrayLengthBasedRangeAccessorToken(2,null, -1).toMultiArrayAccessorToken(json)
         expected = MultiArrayAccessorToken(listOf(2,3))
         assertEquals(expected, res)
+    }
+
+    @Test
+    fun objectAccessorToken() {
+        assertNull(ObjectAccessorToken("key").read(JSONArray()))
+    }
+
+    @Test
+    fun multiObjectAccessorToken() {
+        assertNull(MultiObjectAccessorToken(listOf()).read(JSONArray()))
     }
 }

@@ -2,6 +2,7 @@ package com.nfeld.jsonpathlite
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 
 class PathCompilerTest : BaseTest() {
 
@@ -23,6 +24,7 @@ class PathCompilerTest : BaseTest() {
         assertEquals(5, f("['a]']", start))
         assertEquals(7, f("['a\\'b']", start))
         assertEquals(9, f("['a\\'\\']']", start))
+        assertEquals(6, f("['4\\a']", start))
     }
 
     @Test
@@ -63,5 +65,22 @@ class PathCompilerTest : BaseTest() {
         assertEquals(ArrayAccessorToken(0), f(findClosingIndex("$[  0  ]"), start, end))
         assertEquals(MultiArrayAccessorToken(listOf(0,3)), f(findClosingIndex("$[0,  3]"), start, end))
         assertEquals(ObjectAccessorToken("name"), f(findClosingIndex("$['name']"), start, end))
+    }
+
+    @Test
+    fun shouldThrow() {
+        val compile = PathCompiler::compile
+        val compileBracket = PathCompiler::compileBracket
+
+        assertThrows<IllegalArgumentException> { compile("[0]") } // needs $
+        assertThrows<IllegalArgumentException> { compile("") } // needs $, cant be empty string
+        assertThrows<IllegalArgumentException> { compile("$[]") } // needs value in brackets
+        assertThrows<IllegalArgumentException> { compile("$['']") } // needs value in quotes
+        assertThrows<IllegalArgumentException> { compile("$[") } // needs closing bracket
+        assertThrows<IllegalArgumentException> { compile("$[[]") } // invalid char at end
+        assertThrows<IllegalArgumentException> { compileBracket("$[]", 1, 2) } // no token returned
+        assertThrows<IllegalArgumentException> { compile("$.") } // needs closing bracket
+        assertThrows<IllegalArgumentException> { compile("$['\\") } // unexpected escape char
+        assertThrows<IllegalArgumentException> { PathCompiler.findMatchingClosingBracket("$['4\\", 1) }
     }
 }

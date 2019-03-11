@@ -78,6 +78,10 @@ class JsonPath(path: String) {
         return true
     }
 
+//    private fun isSpecialChar(c: Char): Boolean {
+//        return c == '"' || c == '\\' || c == '/' || c == 'b' || c == 'f' || c == 'n' || c == 'r' || c == 't'
+//    }
+
     companion object {
         /**
          * Parse JSON string and return successful [JsonResult] or throw [JSONException] on parsing error
