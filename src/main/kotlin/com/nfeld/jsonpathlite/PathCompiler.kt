@@ -45,6 +45,8 @@ object PathCompiler {
                     if (next == '.') {
                         isDeepScan = true
                         ++i
+                    } else if (next == null) {
+                        throw IllegalArgumentException("Unexpected ending with dot")
                     }
                 }
                 c == '[' -> {
@@ -89,8 +91,12 @@ object PathCompiler {
             when {
                 c == '\'' -> expectingClosingQuote = !expectingClosingQuote
                 c == ']' && !expectingClosingQuote -> return i
-                c == '\\' && expectingClosingQuote && next == '\'' -> {
-                    ++i // skip this char so we don't process escaped quote
+                c == '\\' && expectingClosingQuote -> {
+                    if (next == '\'') {
+                        ++i // skip this char so we don't process escaped quote
+                    } else if (next == null) {
+                        throw IllegalArgumentException("Unexpected char at end of path")
+                    }
                 }
             }
             ++i
@@ -101,14 +107,6 @@ object PathCompiler {
 
     /**
      * Compile path expression inside of brackets
-     *
-     * ['<name>' (, '<name>')]	Bracket-notated child or children
-    [<number> (, <number>)]	Array index or indexes
-    [start:end]
-     [-<number>]
-     [:end] all up to end, exclusive
-     [start:] from <start> to end, inclusive
-     [-<number>:] last number values
      *
      * @param path original path
      * @param openingIndex index of opening bracket
@@ -188,10 +186,6 @@ object PathCompiler {
             }
 
             ++i
-        }
-
-        if (expectingClosingQuote) {
-            throw IllegalArgumentException("Expecting closing quote in path")
         }
 
         if (keyBuilder.isNotEmpty()) {
