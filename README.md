@@ -7,7 +7,7 @@ With functional programming aspects found in langauges like Kotlin, Scala, and s
 In order to make the library functional programming friendly, JsonPathLite returns *null* rather than throwing exceptions while evaluating a *path* against a JSON object. Throwing exceptions breaks flow control and should be reserved for exceptional errors only.
 
 ## Getting started
-JsonPathLite is available at the JCenter Repository.
+JsonPathLite is available at the Maven Central repository.
 
 **POM**
 ```xml
@@ -20,6 +20,11 @@ JsonPathLite is available at the JCenter Repository.
 
 **Gradle**
 ```gradle
+repositories {
+    mavenCentral()
+    maven { url "https://oss.sonatype.org/content/groups/public" } // for snapshot builds
+}
+
 dependencies {
     implementation 'com.nfeld.jsonpathlite:json-path-lite:1.0.0-SNAPSHOT'
 }

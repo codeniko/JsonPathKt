@@ -79,7 +79,11 @@ publishing {
                 // publish to local repo
                 url = uri("$buildDir/repository")
             } else {
-                url "https://oss.sonatype.org/service/local/staging/deploy/maven2"
+                if (snapshotVersion) {
+                    url = "https://oss.sonatype.org/content/repositories/snapshots"
+                } else {
+                    url = "https://oss.sonatype.org/service/local/staging/deploy/maven2"
+                }
                 credentials {
                     username sonatypeUsername
                     password sonatypePassword
@@ -107,6 +111,6 @@ if (!publishLocal) {
 }
 
 signing {
-    required { !snapshotVersion }
+//    required { !snapshotVersion }
     sign configurations.archives
 }
