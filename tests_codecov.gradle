@@ -3,35 +3,69 @@ dependencies {
     testImplementation 'com.jayway.jsonpath:json-path:2.4.0'
 }
 
+ext {
+    shouldBenchmark = false
+    readmeFormat = false // pass -DreadmeFormat to format benchmark results to update readme
+}
+
 compileTestKotlin {
     kotlinOptions.jvmTarget = "1.8"
 }
 
+task benchmark {
+    doLast {
+        shouldBenchmark = true
+        if (!System.getProperty("readmeFormat", "false").equals("false")) {
+            readmeFormat = true
+        }
+    }
+}
+benchmark.finalizedBy(test)
+
 test {
+    doFirst {
+        if (shouldBenchmark) {
+            if (readmeFormat) {
+                jvmArgs '-DreadmeFormat=true'
+                readmeFormat = false
+            }
+            filter {
+                include("com/nfeld/jsonpathlite/BenchmarkTest.class")
+            }
+            testLogging {
+                showStandardStreams = true
+            }
+        } else {
+            filter {
+                exclude("com/nfeld/jsonpathlite/BenchmarkTest.class")
+            }
+
+            testLogging {
+                // show test results for following events
+                events 'PASSED', 'FAILED', 'SKIPPED'
+
+                // show printlines
+                showStandardStreams = true
+            }
+
+            // show test summary at end
+            afterSuite { desc, result ->
+                if (!desc.parent) {
+                    println "\nTest result: ${result.resultType}"
+                    println "Test summary: ${result.testCount} tests, " +
+                            "${result.successfulTestCount} succeeded, " +
+                            "${result.failedTestCount} failed, " +
+                            "${result.skippedTestCount} skipped"
+                }
+            }
+        }
+    }
+
     // Make this task never up to date, thus forcing rerun of all tests whenever task is run
     outputs.upToDateWhen { false }
 
     // enable junit 5
     useJUnitPlatform()
-
-    testLogging {
-        // show test results for following events
-        events 'PASSED', 'FAILED', 'SKIPPED'
-
-        // show printlines
-        showStandardStreams = true
-    }
-
-    // show test summary at end
-    afterSuite { desc, result ->
-        if (!desc.parent) {
-            println "\nTest result: ${result.resultType}"
-            println "Test summary: ${result.testCount} tests, " +
-                    "${result.successfulTestCount} succeeded, " +
-                    "${result.failedTestCount} failed, " +
-                    "${result.skippedTestCount} skipped"
-        }
-    }
 
     // code coverage
     jacoco {

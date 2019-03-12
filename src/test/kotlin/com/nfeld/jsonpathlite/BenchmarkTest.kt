@@ -8,12 +8,12 @@ import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
-@Disabled
 class BenchmarkTest : BaseTest() {
 
     companion object {
         private const val DEFAULT_RUNS = 30
         private const val DEFAULT_CALLS_PER_RUN = 80000
+        private var printReadmeFormat = false
 
         @JvmStatic
         @BeforeAll
@@ -22,6 +22,8 @@ class BenchmarkTest : BaseTest() {
 
             // disable JsonPath cache for fair benchmarks
             CacheProvider.setCache(NOOPCache())
+
+            printReadmeFormat = System.getProperty("readmeFormat")?.toBoolean() ?: false
         }
     }
 
@@ -59,7 +61,11 @@ class BenchmarkTest : BaseTest() {
     private fun runBenchmarksAndPrintResults(path: String, callsPerRun: Int = DEFAULT_CALLS_PER_RUN, runs: Int = DEFAULT_RUNS) {
         val lite = benchmarkJsonPathLite(path, callsPerRun, runs)
         val other = benchmarkJsonPath(path, callsPerRun, runs)
-        println("$path   lite: ${lite}, jsonpath: ${other}")
+        if (printReadmeFormat) {
+            println("|  $path  |  ${lite} ms |  ${other} ms |")
+        } else {
+            println("$path   lite: ${lite}, jsonpath: ${other}")
+        }
     }
 
     @Test
@@ -74,20 +80,29 @@ class BenchmarkTest : BaseTest() {
 
     @Test
     fun benchmarkPathCompile() {
+        fun print(name: String, lite: Long, other: Long) {
+            if (printReadmeFormat) {
+                println("|  $name  |  ${lite} ms  |  ${other} ms  |")
+            } else {
+                println("$name  lite: ${lite}, jsonpath: ${other}")
+            }
+        }
+
         // short path length
         var lite = benchmark { JsonPath("$.hello['world']") }
         var other = benchmark { com.jayway.jsonpath.JsonPath.compile("$.hello['world']") }
-        println("short path compile time    lite: ${lite}, jsonpath: ${other}")
+        print("short path compile time", lite, other)
 
         // medium path length
         lite = benchmark { JsonPath("$[0].friends[1].other.a.b['c']") }
         other = benchmark { com.jayway.jsonpath.JsonPath.compile("$[0].friends[1].other.a.b['c']") }
-        println("medium path compile time   lite: ${lite}, jsonpath: ${other}")
+        print("medium path compile time", lite, other)
+
 
         // long path length
         lite = benchmark { JsonPath("$[0].friends[1].other.a.b['c'][5].niko[2].hello.world[6][9][0].id") }
         other = benchmark { com.jayway.jsonpath.JsonPath.compile("$[0].friends[1].other.a.b['c'][5].niko[2].hello.world[6][9][0].id") }
-        println("long path compile time     lite: ${lite}, jsonpath: ${other}")
+        print("long path compile time", lite, other)
     }
 
     @Test
