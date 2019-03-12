@@ -191,6 +191,72 @@ class JsonPathTest : BaseTest() {
     }
 
     @Test
+    fun shouldDeepScanBracketNotation() {
+        val expected = setOf("Felecia Bright", "Maryanne Wiggins", "Marylou Caldwell", "Marie Hampton")
+        val result = JsonPath("$[2]..['name']").readFromJson<List<String>>(LARGE_JSON)
+        assertEquals(expected, result!!.toSet())
+    }
+
+    @Test
+    fun shouldDeepScanArrayResultAccessing() {
+        val expected = JSONArray("[{\"other\":{\"a\":{\"b\":{\"c\":\"yo\"}}},\"name\":\"Felecia Bright\",\"id\":0}, \"nulla\"]").toString()
+        val result = JsonPath("$[2]..[0]").readFromJson<JSONArray>(LARGE_JSON)
+        assertEquals(expected, result!!.toString())
+    }
+
+    @Test
+    fun shouldDeepScanArrayResultFromLast() {
+        val expected = JSONArray("[{\"other\":{\"a\":{\"b\":{\"c\":\"yo\"}}},\"name\":\"Marylou Caldwell\",\"id\":2},\"sint\"]").toString()
+        val result = JsonPath("$[2]..[-1]").readFromJson<JSONArray>(LARGE_JSON)
+        assertEquals(expected, result!!.toString())
+    }
+
+    @Test
+    fun shouldDeepScanArrayMultiResultAccessing() {
+        val expected = JSONArray("[{\"other\":{\"a\":{\"b\":{\"c\":\"yo\"}}},\"name\":\"Felecia Bright\",\"id\":0},{\"other\":{\"a\":{\"b\":{\"c\":\"yo\"}}},\"name\":\"Marylou Caldwell\",\"id\":2},\"nulla\",\"ipsum\"]").toString()
+        val result = JsonPath("$[2]..[0,2]").readFromJson<JSONArray>(LARGE_JSON)
+        assertEquals(expected, result!!.toString())
+    }
+
+    @Test
+    fun shouldDeepScanArrayMultiResultWithNegativeIndex() {
+        val expected = JSONArray("[{\"other\":{\"a\":{\"b\":{\"c\":\"yo\"}}},\"name\":\"Felecia Bright\",\"id\":0},{\"other\":{\"a\":{\"b\":{\"c\":\"yo\"}}},\"name\":\"Maryanne Wiggins\"},\"nulla\",\"ut\"]").toString()
+        val result = JsonPath("$[2]..[0, -2]").readFromJson<JSONArray>(LARGE_JSON)
+        assertEquals(expected, result!!.toString())
+    }
+
+    @Test
+    fun shouldDeepScanArrayRangeResult() {
+        val expected = JSONArray("[{\"other\":{\"a\":{\"b\":{\"c\":\"yo\"}}},\"name\":\"Felecia Bright\",\"id\":0},{\"other\":{\"a\":{\"b\":{\"c\":\"yo\"}}},\"name\":\"Maryanne Wiggins\"},\"nulla\",\"elit\"]").toString()
+        val result = JsonPath("$[2]..[0:2]").readFromJson<JSONArray>(LARGE_JSON)
+        assertEquals(expected, result!!.toString())
+    }
+
+    @Test
+    fun shouldDeepScanListOfKeysOnSameLevel() {
+        val expected = JSONArray("[{\n" +
+                "  \"name\": \"Marie Hampton\"\n" +
+                "}, {\n" +
+                "  \"name\": \"Felecia Bright\",\n" +
+                "  \"id\": 0\n" +
+                "}, {\n" +
+                "  \"name\": \"Maryanne Wiggins\"\n" +
+                "}, {\n" +
+                "  \"name\": \"Marylou Caldwell\",\n" +
+                "  \"id\": 2\n" +
+                "}]").toString()
+        val result = JsonPath("$[2]..['name','id']").readFromJson<JSONArray>(LARGE_JSON)
+        assertEquals(expected, result!!.toString())
+    }
+
+    @Test
+    fun shouldDeepScanListOfKeysOnDiffLevels() {
+        val expected = JSONArray("[{\"name\":\"Marie Hampton\",\"company\":\"ZENCO\"},{\"name\":\"Felecia Bright\",\"id\":0},{\"name\":\"Maryanne Wiggins\"},{\"name\":\"Marylou Caldwell\",\"id\":2}]").toString()
+        val result = JsonPath("$[2]..['name','company','id']").readFromJson<JSONArray>(LARGE_JSON)
+        assertEquals(expected, result!!.toString())
+    }
+
+    @Test
     fun shouldBeLastItemInArray() {
         val result = JsonPath("$[0]['tags'][-1]").readFromJson<String>(LARGE_JSON)
         assertEquals("qui", result)

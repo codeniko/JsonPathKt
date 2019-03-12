@@ -7,6 +7,28 @@ import org.junit.jupiter.api.assertThrows
 class PathCompilerTest : BaseTest() {
 
     @Test
+    fun compile() {
+        val f = PathCompiler::compile
+
+        assertEquals(listOf(
+            ArrayAccessorToken(2),
+            DeepScanObjectAccessorToken(listOf("name","id"))), f("$[2]..['name','id']"))
+        assertEquals(listOf(
+            ArrayAccessorToken(2),
+            DeepScanObjectAccessorToken(listOf("name","id")),
+            ArrayAccessorToken(2)), f("$[2]..['name','id'][2]"))
+
+        assertEquals(listOf(DeepScanObjectAccessorToken(listOf("name"))), f("$..['name']"))
+        assertEquals(listOf(DeepScanObjectAccessorToken(listOf("name","age"))), f("$..['name','age']"))
+        assertEquals(listOf(DeepScanArrayAccessorToken(listOf(0))), f("$..[0]"))
+        assertEquals(listOf(DeepScanArrayAccessorToken(listOf(0,1,6))), f("$..[0,1,6]"))
+        assertEquals(listOf(DeepScanArrayAccessorToken(listOf(0,-1,-6))), f("$..[0,-1,-6]"))
+        assertEquals(listOf(DeepScanArrayAccessorToken(listOf(-2))), f("$..[-2]"))
+        assertEquals(listOf(DeepScanArrayAccessorToken(listOf(0,1,2))), f("$..[0:3]"))
+        assertEquals(listOf(DeepScanArrayAccessorToken(listOf(0,1,2))), f("$..[:3]"))
+    }
+
+    @Test
     fun findMatchingClosingBracket() {
         val start = 0
         val f = PathCompiler::findMatchingClosingBracket

@@ -187,7 +187,6 @@ open class BaseTest {
                 "        }\n" +
                 "      },\n" +
                 "      {\n" +
-                "        \"id\": 1,\n" +
                 "        \"name\": \"Maryanne Wiggins\",\n" +
                 "        \"other\": {\n" +
                 "          \"a\": {\n" +

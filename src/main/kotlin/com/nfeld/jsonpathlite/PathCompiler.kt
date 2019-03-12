@@ -24,7 +24,7 @@ object PathCompiler {
         fun addObjectAccessorToken() {
             val key = keyBuilder.toString()
             if (isDeepScan) {
-                tokens.add(DeepScanToken(key))
+                tokens.add(DeepScanObjectAccessorToken(listOf(key)))
             } else {
                 tokens.add(ObjectAccessorToken(key))
             }
@@ -57,7 +57,20 @@ object PathCompiler {
                     val closingBracketIndex = findMatchingClosingBracket(path, i)
                     if (closingBracketIndex > i + 1) { // i+1 checks to make sure atleast one char in the brackets
                         val token = compileBracket(path, i, closingBracketIndex)
-                        tokens.add(token)
+                        if (isDeepScan) {
+                            val deepScanToken: Token? = when (token) {
+                                is ObjectAccessorToken -> DeepScanObjectAccessorToken(listOf(token.key))
+                                is MultiObjectAccessorToken -> DeepScanObjectAccessorToken(token.keys)
+                                is ArrayAccessorToken -> DeepScanArrayAccessorToken(listOf(token.index))
+                                is MultiArrayAccessorToken -> DeepScanArrayAccessorToken(token.indices)
+                                is ArrayLengthBasedRangeAccessorToken -> null
+                                else -> null
+                            }
+                            deepScanToken?.let { tokens.add(it) }
+                            resetForNextToken()
+                        } else {
+                            tokens.add(token)
+                        }
                         i = closingBracketIndex
                     } else {
                         throw IllegalArgumentException("Expecting closing array bracket with a value inside")

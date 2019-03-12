@@ -123,27 +123,84 @@ internal data class MultiObjectAccessorToken(val keys: List<String>) : Token {
 }
 
 /**
- * Recursive scan for values with key=[targetKey]. Returns a [JSONArray] containing values found.
+ * Recursive scan for values with keys in [targetKeys] list. Returns a [JSONArray] containing values found.
  *
- * @param targetKey key to find values for
+ * @param targetKeys keys to find values for
  */
-internal data class DeepScanToken(val targetKey: String) : Token {
+internal data class DeepScanObjectAccessorToken(val targetKeys: List<String>) : Token {
     private val result = JSONArray()
 
     private fun scan(jsonValue: Any) {
         when (jsonValue) {
             is JSONObject -> {
+                // first add all values from keys requested to result
+                if (targetKeys.size > 1) {
+                    val resultToAdd = JSONObject()
+                    targetKeys.forEach { targetKey ->
+                        jsonValue.opt(targetKey)?.let { resultToAdd.put(targetKey, it) }
+                    }
+                    if (!resultToAdd.isEmpty) {
+                        result.put(resultToAdd)
+                    }
+                } else {
+                    targetKeys.firstOrNull()?.let { key ->
+                        jsonValue.opt(key)?.let { result.put(it) }
+                    }
+                }
+
+                // recursively scan all underlying objects/arrays
                 jsonValue.keySet().forEach { objKey ->
                     val objValue = jsonValue.opt(objKey)
-                    if (objKey == targetKey) {
-                        result.put(objValue)
-                    }
                     if (objValue is JSONObject || objValue is JSONArray) {
                         scan(objValue)
                     }
                 }
             }
             is JSONArray -> {
+                val it = jsonValue.iterator()
+                while (it.hasNext()) {
+                    val value = it.next()
+                    if (value is JSONObject || value is JSONArray) {
+                        scan(value)
+                    }
+                }
+            }
+            else -> {}
+        }
+    }
+
+    override fun read(json: Any): Any? {
+        scan(json)
+        return result
+    }
+}
+
+/**
+ * Recursive scan for values/objects/arrays found for all [indices] specified. Returns a [JSONArray] containing results found.
+ *
+ * @param indices indices to retrieve values/objects for
+ */
+internal data class DeepScanArrayAccessorToken(val indices: List<Int>) : Token {
+    private val result = JSONArray()
+
+    private fun scan(jsonValue: Any) {
+        when (jsonValue) {
+            is JSONObject -> {
+                // traverse all key/value pairs and recursively scan underlying objects/arrays
+                jsonValue.keySet().forEach { objKey ->
+                    val objValue = jsonValue.opt(objKey)
+                    if (objValue is JSONObject || objValue is JSONArray) {
+                        scan(objValue)
+                    }
+                }
+            }
+            is JSONArray -> {
+                // first add all requested indices to our results
+                indices.forEach { index ->
+                    ArrayAccessorToken(index).read(jsonValue)?.let { result.put(it) }
+                }
+
+                // now recursively scan underlying objects/arrays
                 val it = jsonValue.iterator()
                 while (it.hasNext()) {
                     val value = it.next()
