@@ -111,6 +111,6 @@ if (!publishLocal) {
 }
 
 signing {
-//    required { !snapshotVersion }
+    required { !snapshotVersion && gradle.taskGraph.hasTask("uploadArchives") }
     sign configurations.archives
 }
