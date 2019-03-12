@@ -25,7 +25,7 @@ publishing {
 
             pom {
                 name = 'JsonPathLite'
-                description = '2019 refresh of Jayway\'s JsonPath with goals to be lighter in size and have better performance.'
+                description = 'A lighter and more efficient implementation of JsonPath in Kotlin'
                 url = 'https://github.com/codeniko/JsonPathLite'
                 licenses {
                     license {
