@@ -109,6 +109,12 @@ JsonPath.parseOrNull(json3)?.read<org.json.JSONObject>("$[0].outer") // returns 
 JsonPath.parseOrNull(json3)?.read<org.json.JSONArray>("$") // returns JSONArray
 ```
 
+JsonPathLite uses [org.json](https://mvnrepository.com/artifact/org.json/json) to decode JSON strings. If you happen to use kotlin in your project, you can evaluate a path against `org.json.JSONObject` and `org.json.JSONArray` directly with the included extension functions:
+```kotlin
+JSONObject("{\"key\":\"value\"}").read<String>("$.key") // returns "value"
+JSONArray("[0,1,2,3,4,5]").read<List<Int>("$[2:]") // returns listOf(2, 3, 4, 5)
+```
+
 ## Benchmarks
 These are benchmark tests of JsonPathLite against Jayway's JsonPath implementation. Results for each test is the average of 30 runs with 80,000 reads per run. You can run these test locally with `./runBenchmarks.sh`
 
