@@ -6,10 +6,9 @@ task sourceJar(type: Jar) {
     from sourceSets.main.allSource
 }
 
-//task javadocJar(type: Jar, dependsOn: javadoc) {
-//    classifier "javadoc"
-//    from javadoc.destinationDir
-//}
+artifacts {
+    archives sourceJar
+}
 
 publishing {
     publications {
@@ -19,9 +18,6 @@ publishing {
             artifact(sourceJar) {
                 classifier = 'sources'
             }
-//            artifact(javadocJar) {
-//                classifier = 'javadoc'
-//            }
 
             pom {
                 name = 'JsonPathLite'
@@ -97,7 +93,6 @@ model {
     tasks.generatePomFileForMavenJavaPublication {
         destination = file("$buildDir/generated-pom.xml")
     }
-
 }
 if (!publishLocal) {
     model {
