@@ -26,6 +26,12 @@ class PathCompilerTest : BaseTest() {
         assertEquals(listOf(DeepScanArrayAccessorToken(listOf(-2))), f("$..[-2]"))
         assertEquals(listOf(DeepScanArrayAccessorToken(listOf(0,1,2))), f("$..[0:3]"))
         assertEquals(listOf(DeepScanArrayAccessorToken(listOf(0,1,2))), f("$..[:3]"))
+        assertEquals(listOf(DeepScanLengthBasedArrayAccessorToken(1, null, 0)), f("$..[1:]"))
+        assertEquals(listOf(DeepScanLengthBasedArrayAccessorToken(0, null, -2)), f("$..[:-2]"))
+        assertEquals(listOf(DeepScanLengthBasedArrayAccessorToken(-5, null, 0)), f("$..[-5:]"))
+        assertEquals(listOf(DeepScanLengthBasedArrayAccessorToken(0, null, -2)), f("$..[0:-2]"))
+        assertEquals(listOf(DeepScanLengthBasedArrayAccessorToken(-5, 6, 0)), f("$..[-5:6]"))
+        assertEquals(listOf(DeepScanLengthBasedArrayAccessorToken(-5, null, -2)), f("$..[-5:-2]"))
     }
 
     @Test

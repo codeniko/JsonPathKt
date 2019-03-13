@@ -157,11 +157,9 @@ internal data class DeepScanObjectAccessorToken(val targetKeys: List<String>) : 
                 }
             }
             is JSONArray -> {
-                val it = jsonValue.iterator()
-                while (it.hasNext()) {
-                    val value = it.next()
-                    if (value is JSONObject || value is JSONArray) {
-                        scan(value)
+                jsonValue.forEach {
+                    if (it is JSONObject || it is JSONArray) {
+                        scan(it)
                     }
                 }
             }
@@ -201,11 +199,60 @@ internal data class DeepScanArrayAccessorToken(val indices: List<Int>) : Token {
                 }
 
                 // now recursively scan underlying objects/arrays
-                val it = jsonValue.iterator()
-                while (it.hasNext()) {
-                    val value = it.next()
-                    if (value is JSONObject || value is JSONArray) {
-                        scan(value)
+                jsonValue.forEach {
+                    if (it is JSONObject || it is JSONArray) {
+                        scan(it)
+                    }
+                }
+            }
+            else -> {}
+        }
+    }
+
+    override fun read(json: Any): Any? {
+        scan(json)
+        return result
+    }
+}
+
+
+/**
+ * Recursive scan for values/objects/arrays from [JSONArray] in range from [startIndex] to either [endIndex] or [offsetFromEnd] from end.
+ * When read, value returned will be JSONArray of values at requested indices in order of values in range. Returns a [JSONArray] containing results found.
+ *
+ * @param startIndex starting index of range, inclusive. Can be negative.
+ * @param endIndex ending index of range, exclusive. Null if using [offsetFromEnd]
+ * @param offsetFromEnd offset of values from end of array. 0 if using [endIndex]
+ */
+internal data class DeepScanLengthBasedArrayAccessorToken(val startIndex: Int,
+                                                          val endIndex: Int? = null,
+                                                          val offsetFromEnd: Int = 0) : Token {
+    private val result = JSONArray()
+
+    private fun scan(jsonValue: Any) {
+        when (jsonValue) {
+            is JSONObject -> {
+                // traverse all key/value pairs and recursively scan underlying objects/arrays
+                jsonValue.keySet().forEach { objKey ->
+                    val objValue = jsonValue.opt(objKey)
+                    if (objValue is JSONObject || objValue is JSONArray) {
+                        scan(objValue)
+                    }
+                }
+            }
+            is JSONArray -> {
+                ArrayLengthBasedRangeAccessorToken(startIndex, endIndex, offsetFromEnd)
+                    .toMultiArrayAccessorToken(jsonValue)
+                    ?.read(jsonValue)
+                    ?.let { resultAny ->
+                        val resultArray = resultAny as? JSONArray
+                        resultArray?.forEach { result.put(it) }
+                    }
+
+                // now recursively scan underlying objects/arrays
+                jsonValue.forEach {
+                    if (it is JSONObject || it is JSONArray) {
+                        scan(it)
                     }
                 }
             }

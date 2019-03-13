@@ -63,7 +63,8 @@ Given the json:
             },
             {
                 "name": "Konstantin",
-                "age": 29
+                "age": 29,
+                "nickname": "Kons"
             },
             {
                 "name": "Tracy",
@@ -90,6 +91,7 @@ Given the json:
 | $..name                   |  All names  |
 | $.family..name            |  All names nested within family object  |
 | $.family.children[:3]..age     |  The ages of first three children |
+| $..['name','nickname']    |  Names & nicknames (if any) of all children |
 
 ## Code examples
 When parsing a JSON, you have the flexibility to either return null or to throw org.json.JSONException on parsing failure.
@@ -114,23 +116,29 @@ These are benchmark tests of JsonPathLite against Jayway's JsonPath implementati
 
 | Path Tested | JsonPathLite (ms) | JsonPath (ms) |
 | :---------- | :------ | :----- |
-|  $[0]['tags'][3:]  |  84 ms |  137 ms |
-|  $[0]['tags'][0,3, 5]  |  62 ms |  141 ms |
-|  $[2]._id  |  22 ms |  61 ms |
-|  $[0]['tags'][3:5]  |  60 ms |  114 ms |
-|  $[0]['tags'][-3]  |  51 ms |  99 ms |
-|  $[0].friends[1].other.a.b['c']  |  63 ms |  165 ms |
-|  $..tags  |  91 ms |  624 ms |
-|  $..name  |  91 ms |  540 ms |
-|  $[0]['latitude','longitude', 'isActive']  |  71 ms |  146 ms |
-|  $[0]['tags'][:3]  |  65 ms |  129 ms |
+|  $[0]['tags'][3:]  |  86 ms |  136 ms |
+|  $[0]['tags'][0,3, 5]  |  65 ms |  148 ms |
+|  $..[:2]  |  96 ms |  575 ms |
+|  $..[2:]  |  156 ms |  569 ms |
+|  $..[1:-1]  |  135 ms |  430 ms |
+|  $[2]._id  |  27 ms |  63 ms |
+|  $[0]['tags'][3:5]  |  66 ms |  115 ms |
+|  $[0]['tags'][-3]  |  45 ms |  100 ms |
+|  $[0].friends[1].other.a.b['c']  |  70 ms |  164 ms |
+|  $..name  |  86 ms |  556 ms |
+|  $..['email','name']  |  138 ms |  557 ms |
+|  $..[1]  |  86 ms |  467 ms |
+|  $[0]['latitude','longitude', 'isActive']  |  70 ms |  138 ms |
+|  $[0]['tags'][:3]  |  64 ms |  120 ms |
 
 **Compiling JsonPath string to internal tokens**
 
 | Path size | JsonPathLite | JsonPath |
 | :-------- | :----------- | :------- |
-|  short path compile time  |  25 ms  |  26 ms  |
-|  medium path compile time  |  53 ms  |  72 ms  |
-|  long path compile time  |  119 ms  |  175 ms  |
+|  7 chars, 1 tokens  |  9 ms  |  10 ms  |
+|  16 chars, 3 tokens  |  25 ms  |  32 ms  |
+|  30 chars, 7 tokens  |  50 ms  |  72 ms  |
+|  65 chars, 16 tokens  |  120 ms  |  172 ms  |
+|  88 chars, 19 tokens  |  159 ms  |  232 ms  |
 
 [![Analytics](https://ga-beacon.appspot.com/UA-116910991-3/jsonpathlite/index)](https://github.com/igrigorik/ga-beacon)

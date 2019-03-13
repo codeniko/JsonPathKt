@@ -63,7 +63,7 @@ object PathCompiler {
                                 is MultiObjectAccessorToken -> DeepScanObjectAccessorToken(token.keys)
                                 is ArrayAccessorToken -> DeepScanArrayAccessorToken(listOf(token.index))
                                 is MultiArrayAccessorToken -> DeepScanArrayAccessorToken(token.indices)
-                                is ArrayLengthBasedRangeAccessorToken -> null
+                                is ArrayLengthBasedRangeAccessorToken -> DeepScanLengthBasedArrayAccessorToken(token.startIndex, token.endIndex, token.offsetFromEnd)
                                 else -> null
                             }
                             deepScanToken?.let { tokens.add(it) }

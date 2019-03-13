@@ -91,6 +91,39 @@ class TokenTest : BaseTest() {
     }
 
     @Test
+    fun deepScanLengthBasedArrayAccessorToken() {
+        val json = JSONArray("[0,1,2,3,4]")
+
+        printTesting("[0:]")
+        var res = DeepScanLengthBasedArrayAccessorToken(0,null, 0).read(json).toString()
+        assertEquals(json.toString(), res)
+
+        printTesting("[1:]")
+        res = DeepScanLengthBasedArrayAccessorToken(1,null, 0).read(json).toString()
+        assertEquals("[1,2,3,4]", res)
+
+        printTesting("[:-2]")
+        res = DeepScanLengthBasedArrayAccessorToken(0,null, -2).read(json).toString()
+        assertEquals("[0,1,2]", res)
+
+        printTesting("[-3:]")
+        res = DeepScanLengthBasedArrayAccessorToken(-3,null, 0).read(json).toString()
+        assertEquals("[2,3,4]", res)
+
+        printTesting("[0:-2]")
+        res = DeepScanLengthBasedArrayAccessorToken(0,null, -2).read(json).toString()
+        assertEquals("[0,1,2]", res)
+
+        printTesting("[-4:3]")
+        res = DeepScanLengthBasedArrayAccessorToken(-4,3, 0).read(json).toString()
+        assertEquals("[1,2]", res)
+
+        printTesting("[-3:-1]")
+        res = DeepScanLengthBasedArrayAccessorToken(-3,null, -1).read(json).toString()
+        assertEquals("[2,3]", res)
+    }
+
+    @Test
     fun objectAccessorToken() {
         assertNull(ObjectAccessorToken("key").read(JSONArray()))
     }

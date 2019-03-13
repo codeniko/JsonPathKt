@@ -233,6 +233,48 @@ class JsonPathTest : BaseTest() {
     }
 
     @Test
+    fun shouldDeepScanLengthBasedToEnd() {
+        val expected = JSONArray("[{\"other\":{\"a\":{\"b\":{\"c\":\"yo\"}}},\"name\":\"Marylou Caldwell\",\"id\":2},\"ipsum\",\"pariatur\",\"ullamco\",\"ut\",\"sint\"]").toString()
+        val result = JsonPath("$[2]..[2:]").readFromJson<JSONArray>(LARGE_JSON)
+        assertEquals(expected, result!!.toString())
+    }
+
+    @Test
+    fun shouldDeepScanLengthBasedToNegativeEnd() {
+        val expected = JSONArray("[{\"other\":{\"a\":{\"b\":{\"c\":\"yo\"}}},\"name\":\"Felecia Bright\",\"id\":0},{\"other\":{\"a\":{\"b\":{\"c\":\"yo\"}}},\"name\":\"Maryanne Wiggins\"},\"nulla\",\"elit\",\"ipsum\",\"pariatur\",\"ullamco\",\"ut\"]").toString()
+        val result = JsonPath("$[2]..[:-1]").readFromJson<JSONArray>(LARGE_JSON)
+        assertEquals(expected, result!!.toString())
+    }
+
+    @Test
+    fun shouldDeepScanLengthBasedNegativeStart() {
+        val expected = JSONArray("[{\"other\":{\"a\":{\"b\":{\"c\":\"yo\"}}},\"name\":\"Maryanne Wiggins\"},{\"other\":{\"a\":{\"b\":{\"c\":\"yo\"}}},\"name\":\"Marylou Caldwell\",\"id\":2},\"ut\",\"sint\"]").toString()
+        val result = JsonPath("$[2]..[-2:]").readFromJson<JSONArray>(LARGE_JSON)
+        assertEquals(expected, result!!.toString())
+    }
+
+    @Test
+    fun shouldDeepScanLengthBasedStartToNegativeEnd() {
+        val expected = JSONArray("[{\"other\":{\"a\":{\"b\":{\"c\":\"yo\"}}},\"name\":\"Maryanne Wiggins\"},\"elit\",\"ipsum\",\"pariatur\",\"ullamco\",\"ut\"]").toString()
+        val result = JsonPath("$[2]..[1:-1]").readFromJson<JSONArray>(LARGE_JSON)
+        assertEquals(expected, result!!.toString())
+    }
+
+    @Test
+    fun shouldDeepScanLengthBasedNegativeStartToEnd() {
+        val expected = JSONArray("[{\"other\":{\"a\":{\"b\":{\"c\":\"yo\"}}},\"name\":\"Maryanne Wiggins\"},{\"other\":{\"a\":{\"b\":{\"c\":\"yo\"}}},\"name\":\"Marylou Caldwell\",\"id\":2}]").toString()
+        val result = JsonPath("$[2]..[-2:5]").readFromJson<JSONArray>(LARGE_JSON)
+        assertEquals(expected, result!!.toString())
+    }
+
+    @Test
+    fun shouldDeepScanLengthBasedNegativeStartToNegativeEnd() {
+        val expected = JSONArray("[{\"other\":{\"a\":{\"b\":{\"c\":\"yo\"}}},\"name\":\"Maryanne Wiggins\"},\"ut\"]").toString()
+        val result = JsonPath("$[2]..[-2:-1]").readFromJson<JSONArray>(LARGE_JSON)
+        assertEquals(expected, result!!.toString())
+    }
+
+    @Test
     fun shouldDeepScanListOfKeysOnSameLevel() {
         val expected = JSONArray("[{\n" +
                 "  \"name\": \"Marie Hampton\"\n" +

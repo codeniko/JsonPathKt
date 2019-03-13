@@ -80,7 +80,13 @@ class BenchmarkTest : BaseTest() {
 
     @Test
     fun benchmarkPathCompile() {
-        fun print(name: String, lite: Long, other: Long) {
+
+        fun compile(path: String) {
+            val lite = benchmark { JsonPath(path) }
+            val other = benchmark { com.jayway.jsonpath.JsonPath.compile(path) }
+            val numTokens = PathCompiler.compile(path).size
+            val name = "${path.length} chars, $numTokens tokens"
+
             if (printReadmeFormat) {
                 println("|  $name  |  ${lite} ms  |  ${other} ms  |")
             } else {
@@ -88,29 +94,30 @@ class BenchmarkTest : BaseTest() {
             }
         }
 
-        // short path length
-        var lite = benchmark { JsonPath("$.hello['world']") }
-        var other = benchmark { com.jayway.jsonpath.JsonPath.compile("$.hello['world']") }
-        print("short path compile time", lite, other)
-
-        // medium path length
-        lite = benchmark { JsonPath("$[0].friends[1].other.a.b['c']") }
-        other = benchmark { com.jayway.jsonpath.JsonPath.compile("$[0].friends[1].other.a.b['c']") }
-        print("medium path compile time", lite, other)
-
-
-        // long path length
-        lite = benchmark { JsonPath("$[0].friends[1].other.a.b['c'][5].niko[2].hello.world[6][9][0].id") }
-        other = benchmark { com.jayway.jsonpath.JsonPath.compile("$[0].friends[1].other.a.b['c'][5].niko[2].hello.world[6][9][0].id") }
-        print("long path compile time", lite, other)
+        compile("$.hello")
+        compile("$.hello.world[0]")
+        compile("$[0].friends[1].other.a.b['c']")
+        compile("$[0].friends[1].other.a.b['c'][5].niko[2].hello.world[6][9][0].id")
+        compile("$[0].friends[1]..other[2].a.b['c'][5].niko[2]..hello[0].world[6][9]..['a','b','c'][0].id")
     }
 
     @Test
-    fun benchmarkDeepScan() {
+    fun benchmarkDeepScans() {
         val callsPerRun = 20000
         val runs = 10
         runBenchmarksAndPrintResults("$..tags", callsPerRun, runs)
         runBenchmarksAndPrintResults("$..name", callsPerRun, runs)
+        runBenchmarksAndPrintResults("$..['email','name']", callsPerRun, runs)
+        runBenchmarksAndPrintResults("$..[1]", callsPerRun, runs)
+    }
+
+    @Test
+    fun benchmarkDeepScanRanges() {
+        val callsPerRun = 20000
+        val runs = 10
+        runBenchmarksAndPrintResults("$..[:2]", callsPerRun, runs)
+        runBenchmarksAndPrintResults("$..[2:]", callsPerRun, runs)
+        runBenchmarksAndPrintResults("$..[1:-1]", callsPerRun, runs)
     }
 
     @Test
