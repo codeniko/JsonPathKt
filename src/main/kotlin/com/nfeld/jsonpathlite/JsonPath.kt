@@ -91,6 +91,7 @@ class JsonPath(path: String) {
          * @throws JSONException
          */
         @Throws(JSONException::class)
+        @JvmStatic
         fun parse(jsonString: String): JsonResult = when {
             jsonString.isEmpty() -> throw JSONException("JSON string is empty")
             jsonString.first() == '{' -> JsonObject(JSONObject(jsonString))
@@ -103,6 +104,7 @@ class JsonPath(path: String) {
          * @param jsonString JSON string to parse
          * @return instance of parsed [JsonResult] object or null
          */
+        @JvmStatic
         fun parseOrNull(jsonString: String): JsonResult? {
             return jsonString.firstOrNull()?.run {
                 try {

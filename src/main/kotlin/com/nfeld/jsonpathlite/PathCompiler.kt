@@ -1,6 +1,6 @@
 package com.nfeld.jsonpathlite
 
-object PathCompiler {
+internal object PathCompiler {
 
     /**
      * @param path Path string to compile
