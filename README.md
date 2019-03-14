@@ -1,5 +1,6 @@
 # JsonPathLite
 [![Build Status](https://travis-ci.com/codeniko/JsonPathLite.svg?branch=master)](https://travis-ci.com/codeniko/JsonPathLite)
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.nfeld.jsonpathlite/json-path-lite/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.nfeld.jsonpathlite/json-path-lite)
 
 **A lighter and more efficient implementation of JsonPath in Kotlin.**
 With functional programming aspects found in langauges like Kotlin, Scala, and streams/lambdas in Java8, this library simplifies other implementations like [Jayway's JsonPath](https://github.com/json-path/JsonPath) by removing *filter operations* and *in-path functions* to focus solely on what matters most: modern fast value extractions from JSON objects. Up to **6x more efficient** in some cases; see [Benchmarks](#benchmarks).
