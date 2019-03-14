@@ -12,21 +12,17 @@ JsonPathLite is available at the Maven Central repository.
 **POM**
 ```xml
 <dependency>
-    <groupId>com.nfeld.jsonpathlite</groupId>
-    <artifactId>json-path-lite</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+  <groupId>com.nfeld.jsonpathlite</groupId>
+  <artifactId>json-path-lite</artifactId>
+  <version>1.0.0</version>
+  <type>pom</type>
 </dependency>
 ```
 
 **Gradle**
 ```gradle
-repositories {
-    mavenCentral()
-    maven { url "https://oss.sonatype.org/content/groups/public" } // for snapshot builds
-}
-
 dependencies {
-    implementation 'com.nfeld.jsonpathlite:json-path-lite:1.0.0-SNAPSHOT'
+    implementation 'com.nfeld.jsonpathlite:json-path-lite:1.0.0'
 }
 ```
 

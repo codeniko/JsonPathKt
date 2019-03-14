@@ -7,7 +7,7 @@ task sourceJar(type: Jar) {
 }
 
 artifacts {
-    archives sourceJar
+    archives jar, sourceJar
 }
 
 publishing {
