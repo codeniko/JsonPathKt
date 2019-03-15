@@ -31,9 +31,9 @@ internal data class ArrayAccessorToken(val index: Int) : Token {
  * @param indices indices to access, can be negative which means to access from end
  */
 internal data class MultiArrayAccessorToken(val indices: List<Int>) : Token {
-    private val result = JSONArray()
-
     override fun read(json: Any): Any? {
+        val result = JSONArray()
+
         if (json is JSONArray) {
             val jsonLength = json.length()
             indices.forEach { index ->
@@ -108,9 +108,9 @@ internal data class ObjectAccessorToken(val key: String) : Token {
  * @param keys keys to access for which key/values to return
  */
 internal data class MultiObjectAccessorToken(val keys: List<String>) : Token {
-    private val result = JSONObject()
-
     override fun read(json: Any): Any? {
+        val result = JSONObject()
+
         return if (json is JSONObject) {
             keys.forEach { key ->
                 json.opt(key)?.let {
@@ -128,9 +128,7 @@ internal data class MultiObjectAccessorToken(val keys: List<String>) : Token {
  * @param targetKeys keys to find values for
  */
 internal data class DeepScanObjectAccessorToken(val targetKeys: List<String>) : Token {
-    private val result = JSONArray()
-
-    private fun scan(jsonValue: Any) {
+    private fun scan(jsonValue: Any, result: JSONArray) {
         when (jsonValue) {
             is JSONObject -> {
                 // first add all values from keys requested to result
@@ -152,14 +150,14 @@ internal data class DeepScanObjectAccessorToken(val targetKeys: List<String>) : 
                 jsonValue.keySet().forEach { objKey ->
                     val objValue = jsonValue.opt(objKey)
                     if (objValue is JSONObject || objValue is JSONArray) {
-                        scan(objValue)
+                        scan(objValue, result)
                     }
                 }
             }
             is JSONArray -> {
                 jsonValue.forEach {
                     if (it is JSONObject || it is JSONArray) {
-                        scan(it)
+                        scan(it, result)
                     }
                 }
             }
@@ -168,7 +166,8 @@ internal data class DeepScanObjectAccessorToken(val targetKeys: List<String>) : 
     }
 
     override fun read(json: Any): Any? {
-        scan(json)
+        val result = JSONArray()
+        scan(json, result)
         return result
     }
 }
@@ -179,16 +178,14 @@ internal data class DeepScanObjectAccessorToken(val targetKeys: List<String>) : 
  * @param indices indices to retrieve values/objects for
  */
 internal data class DeepScanArrayAccessorToken(val indices: List<Int>) : Token {
-    private val result = JSONArray()
-
-    private fun scan(jsonValue: Any) {
+    private fun scan(jsonValue: Any, result: JSONArray) {
         when (jsonValue) {
             is JSONObject -> {
                 // traverse all key/value pairs and recursively scan underlying objects/arrays
                 jsonValue.keySet().forEach { objKey ->
                     val objValue = jsonValue.opt(objKey)
                     if (objValue is JSONObject || objValue is JSONArray) {
-                        scan(objValue)
+                        scan(objValue, result)
                     }
                 }
             }
@@ -201,7 +198,7 @@ internal data class DeepScanArrayAccessorToken(val indices: List<Int>) : Token {
                 // now recursively scan underlying objects/arrays
                 jsonValue.forEach {
                     if (it is JSONObject || it is JSONArray) {
-                        scan(it)
+                        scan(it, result)
                     }
                 }
             }
@@ -210,7 +207,8 @@ internal data class DeepScanArrayAccessorToken(val indices: List<Int>) : Token {
     }
 
     override fun read(json: Any): Any? {
-        scan(json)
+        val result = JSONArray()
+        scan(json, result)
         return result
     }
 }
@@ -227,16 +225,14 @@ internal data class DeepScanArrayAccessorToken(val indices: List<Int>) : Token {
 internal data class DeepScanLengthBasedArrayAccessorToken(val startIndex: Int,
                                                           val endIndex: Int? = null,
                                                           val offsetFromEnd: Int = 0) : Token {
-    private val result = JSONArray()
-
-    private fun scan(jsonValue: Any) {
+    private fun scan(jsonValue: Any, result: JSONArray) {
         when (jsonValue) {
             is JSONObject -> {
                 // traverse all key/value pairs and recursively scan underlying objects/arrays
                 jsonValue.keySet().forEach { objKey ->
                     val objValue = jsonValue.opt(objKey)
                     if (objValue is JSONObject || objValue is JSONArray) {
-                        scan(objValue)
+                        scan(objValue, result)
                     }
                 }
             }
@@ -252,7 +248,7 @@ internal data class DeepScanLengthBasedArrayAccessorToken(val startIndex: Int,
                 // now recursively scan underlying objects/arrays
                 jsonValue.forEach {
                     if (it is JSONObject || it is JSONArray) {
-                        scan(it)
+                        scan(it, result)
                     }
                 }
             }
@@ -261,7 +257,8 @@ internal data class DeepScanLengthBasedArrayAccessorToken(val startIndex: Int,
     }
 
     override fun read(json: Any): Any? {
-        scan(json)
+        val result = JSONArray()
+        scan(json, result)
         return result
     }
 }
