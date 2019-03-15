@@ -119,29 +119,42 @@ These are benchmark tests of JsonPathLite against Jayway's JsonPath implementati
 
 | Path Tested | JsonPathLite (ms) | JsonPath (ms) |
 | :---------- | :------ | :----- |
-|  $[0]['tags'][3:]  |  86 ms |  136 ms |
-|  $[0]['tags'][0,3, 5]  |  65 ms |  148 ms |
-|  $..[:2]  |  96 ms |  575 ms |
-|  $..[2:]  |  156 ms |  569 ms |
-|  $..[1:-1]  |  135 ms |  430 ms |
-|  $[2]._id  |  27 ms |  63 ms |
-|  $[0]['tags'][3:5]  |  66 ms |  115 ms |
-|  $[0]['tags'][-3]  |  45 ms |  100 ms |
-|  $[0].friends[1].other.a.b['c']  |  70 ms |  164 ms |
-|  $..name  |  86 ms |  556 ms |
-|  $..['email','name']  |  138 ms |  557 ms |
-|  $..[1]  |  86 ms |  467 ms |
-|  $[0]['latitude','longitude', 'isActive']  |  70 ms |  138 ms |
-|  $[0]['tags'][:3]  |  64 ms |  120 ms |
+|  $[0]['tags'][3:]  |  67 ms *(34 ms w/ cache)* |  134 ms *(94 ms w/ cache)*  |
+|  $[0]['tags'][0,3,5]  |  64 ms *(15 ms w/ cache)* |  140 ms *(65 ms w/ cache)*  |
+|  $..[:2]  |  94 ms *(88 ms w/ cache)* |  581 ms *(564 ms w/ cache)*  |
+|  $..[2:]  |  134 ms *(147 ms w/ cache)* |  568 ms *(537 ms w/ cache)*  |
+|  $..[1:-1]  |  134 ms *(125 ms w/ cache)* |  445 ms *(433 ms w/ cache)*  |
+|  $[2]._id  |  28 ms *(6 ms w/ cache)* |  64 ms *(36 ms w/ cache)*  |
+|  $[0]['tags'][3:5]  |  67 ms *(18 ms w/ cache)* |  116 ms *(61 ms w/ cache)*  |
+|  $[0]['tags'][-3]  |  46 ms *(5 ms w/ cache)* |  101 ms *(45 ms w/ cache)*  |
+|  $[0].friends[1].other.a.b['c']  |  70 ms *(10 ms w/ cache)* |  167 ms *(82 ms w/ cache)*  |
+|  $..name  |  88 ms *(93 ms w/ cache)* |  566 ms *(624 ms w/ cache)*  |
+|  $..['email','name']  |  128 ms *(138 ms w/ cache)* |  570 ms *(564 ms w/ cache)*  |
+|  $..[1]  |  84 ms *(89 ms w/ cache)* |  493 ms *(481 ms w/ cache)*  |
+|  $[0]['latitude','longitude','isActive']  |  68 ms *(13 ms w/ cache)* |  136 ms *(74 ms w/ cache)*  |
+|  $[0]['tags'][:3]  |  66 ms *(19 ms w/ cache)* |  126 ms *(71 ms w/ cache)*  |
 
 **Compiling JsonPath string to internal tokens**
 
 | Path size | JsonPathLite | JsonPath |
 | :-------- | :----------- | :------- |
-|  7 chars, 1 tokens  |  9 ms  |  10 ms  |
-|  16 chars, 3 tokens  |  25 ms  |  32 ms  |
-|  30 chars, 7 tokens  |  50 ms  |  72 ms  |
-|  65 chars, 16 tokens  |  120 ms  |  172 ms  |
-|  88 chars, 19 tokens  |  159 ms  |  232 ms  |
+|  7 chars, 1 tokens  |  10 ms *(2 ms w/ cache)* |  10 ms *(11 ms w/ cache)* |
+|  16 chars, 3 tokens  |  25 ms *(2 ms w/ cache)* |  31 ms *(32 ms w/ cache)* |
+|  30 chars, 7 tokens  |  50 ms *(1 ms w/ cache)* |  70 ms *(69 ms w/ cache)* |
+|  65 chars, 16 tokens  |  118 ms *(1 ms w/ cache)* |  166 ms *(166 ms w/ cache)* |
+|  88 chars, 19 tokens  |  154 ms *(1 ms w/ cache)* |  225 ms *(227 ms w/ cache)* |
+
+# Cache
+JsonPathLite uses an LRU cache by default to cache compiled JsonPath tokens. If you don't want to use the cache, you can disable it or set the CacheProvider to use your own implementation of the Cache interface.
+```kotlin
+// Disable cache
+CacheProvider.setCache(null)
+
+// Implement your own cache
+CacheProvider.setCache(object : Cache {
+    override fun get(path: String): JsonPath? { ... }
+    override fun put(path: String, jsonPath: JsonPath) { ... }
+)
+```
 
 [![Analytics](https://ga-beacon.appspot.com/UA-116910991-3/jsonpathlite/index)](https://github.com/igrigorik/ga-beacon)

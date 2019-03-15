@@ -2,10 +2,8 @@ package com.nfeld.jsonpathlite
 
 import com.jayway.jsonpath.spi.cache.NOOPCache
 import com.nfeld.jsonpathlite.cache.CacheProvider
-import com.nfeld.jsonpathlite.extension.read
 import org.json.JSONArray
 import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
 class BenchmarkTest : BaseTest() {
@@ -21,12 +19,6 @@ class BenchmarkTest : BaseTest() {
             println("Setting up BenchmarkTest")
 
             printReadmeFormat = System.getProperty("readmeFormat")?.toBoolean() ?: false
-        }
-
-        @JvmStatic
-        @BeforeEach
-        fun resetCache() {
-            resetCacheProvider()
         }
     }
 
@@ -53,7 +45,7 @@ class BenchmarkTest : BaseTest() {
 
     private fun benchmarkJsonPathLite(path: String, callsPerRun: Int = DEFAULT_CALLS_PER_RUN, runs: Int = DEFAULT_RUNS): Long {
         val jsonArray = JSONArray(LARGE_JSON) // pre-parse json
-        return benchmark(callsPerRun, runs) { jsonArray.read<String>(path) }
+        return benchmark(callsPerRun, runs) { JsonPath(path).readFromJson<String>(jsonArray) }
     }
 
     private fun benchmarkJsonPath(path: String, callsPerRun: Int = DEFAULT_CALLS_PER_RUN, runs: Int = DEFAULT_RUNS): Long {
@@ -62,21 +54,30 @@ class BenchmarkTest : BaseTest() {
     }
 
     private fun runBenchmarksAndPrintResults(path: String, callsPerRun: Int = DEFAULT_CALLS_PER_RUN, runs: Int = DEFAULT_RUNS) {
+        // reset caches to initial position, default on
+        resetCaches()
+
         // first benchmarks will be using caches
         val lite = benchmarkJsonPathLite(path, callsPerRun, runs)
         val other = benchmarkJsonPath(path, callsPerRun, runs)
 
         // now disable caches
         CacheProvider.setCache(null)
+        resetJaywayCacheProvider()
         com.jayway.jsonpath.spi.cache.CacheProvider.setCache(NOOPCache())
         val liteNoCache = benchmarkJsonPathLite(path, callsPerRun, runs)
         val otherNoCache = benchmarkJsonPath(path, callsPerRun, runs)
 
         if (printReadmeFormat) {
-            println("|  $path  |  ${lite} ms |  ${other} ms | $liteNoCache ms | $otherNoCache ms |")
+            println("|  $path  |  $liteNoCache ms *($lite ms w/ cache)* |  $otherNoCache ms *($other ms w/ cache)*  |")
         } else {
-            println("$path   lite: ${lite}, jsonpath: ${other}   Without caches:  lite: ${liteNoCache}, jsonpath: ${otherNoCache}")
+            println("$path   lite: ${lite}, jsonpath: ${other}     Without caches:  lite: ${liteNoCache}, jsonpath: ${otherNoCache}")
         }
+    }
+
+    private fun resetCaches() {
+        resetCacheProvider()
+        resetJaywayCacheProvider()
     }
 
     @Test
@@ -93,13 +94,17 @@ class BenchmarkTest : BaseTest() {
     fun benchmarkPathCompile() {
 
         fun compile(path: String) {
+            resetCaches()
+
             // first with caches
             val lite = benchmark { JsonPath(path) }
             val other = benchmark { com.jayway.jsonpath.JsonPath.compile(path) }
 
             // now disable caches
             CacheProvider.setCache(null)
+            resetJaywayCacheProvider()
             com.jayway.jsonpath.spi.cache.CacheProvider.setCache(NOOPCache())
+
             val liteNoCache = benchmark { JsonPath(path) }
             val otherNoCache = benchmark { com.jayway.jsonpath.JsonPath.compile(path) }
 
@@ -107,9 +112,9 @@ class BenchmarkTest : BaseTest() {
             val name = "${path.length} chars, $numTokens tokens"
 
             if (printReadmeFormat) {
-                println("|  $name  |  ${lite} ms  |  ${other} ms  | $liteNoCache ms | $otherNoCache ms |")
+                println("|  $name  |  $liteNoCache ms *($lite ms w/ cache)* |  $otherNoCache ms *($other ms w/ cache)* |")
             } else {
-                println("$name  lite: ${lite}, jsonpath: ${other}   Without caches:  lite: ${liteNoCache}, jsonpath: ${otherNoCache}")
+                println("$name  lite: ${lite}, jsonpath: ${other}     Without caches:  lite: ${liteNoCache}, jsonpath: ${otherNoCache}")
             }
         }
 
@@ -124,7 +129,6 @@ class BenchmarkTest : BaseTest() {
     fun benchmarkDeepScans() {
         val callsPerRun = 20000
         val runs = 10
-        runBenchmarksAndPrintResults("$..tags", callsPerRun, runs)
         runBenchmarksAndPrintResults("$..name", callsPerRun, runs)
         runBenchmarksAndPrintResults("$..['email','name']", callsPerRun, runs)
         runBenchmarksAndPrintResults("$..[1]", callsPerRun, runs)

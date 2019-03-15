@@ -15,8 +15,6 @@ open class BaseTest {
     companion object {
         // we need to reset this singleton across test suites
         fun resetCacheProvider() {
-            println("Resetting CacheProvider singleton")
-
             // use reflection to reset CacheProvider singleton to its initial state
             CacheProvider.javaClass.getDeclaredField("cache").apply {
                 isAccessible = true
@@ -24,7 +22,18 @@ open class BaseTest {
             }
             CacheProvider.javaClass.getDeclaredField("useDefault").apply {
                 isAccessible = true
-                set(null, true)
+                setBoolean(null, true)
+            }
+        }
+
+        fun resetJaywayCacheProvider() {
+            com.jayway.jsonpath.spi.cache.CacheProvider::class.java.getDeclaredField("cache").apply {
+                isAccessible = true
+                set(null, null)
+            }
+            com.jayway.jsonpath.spi.cache.CacheProvider::class.java.getDeclaredField("cachingEnabled").apply {
+                isAccessible = true
+                setBoolean(null, false)
             }
         }
 
