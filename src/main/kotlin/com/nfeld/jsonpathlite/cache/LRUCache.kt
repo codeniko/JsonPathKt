@@ -5,9 +5,7 @@ import org.jetbrains.annotations.TestOnly
 import java.util.LinkedHashMap
 
 internal class LRUCache(private val maxCacheSize: Int): Cache {
-    private val map = object : LinkedHashMap<String, JsonPath>(INITIAL_CAPACITY, LOAD_FACTOR, true) {
-        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, JsonPath>?): Boolean = size > maxCacheSize
-    }
+    private val map = LRUMap()
 
     @Synchronized
     override fun get(path: String): JsonPath? = map.get(path)
@@ -15,6 +13,13 @@ internal class LRUCache(private val maxCacheSize: Int): Cache {
     @Synchronized
     override fun put(path: String, jsonPath: JsonPath) {
         map.put(path, jsonPath)
+    }
+
+    @TestOnly
+    internal fun toList(): List<Pair<String, JsonPath>> = map.toList()
+
+    private inner class LRUMap : LinkedHashMap<String, JsonPath>(INITIAL_CAPACITY, LOAD_FACTOR, true) {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, JsonPath>?): Boolean = size > maxCacheSize
     }
 
     companion object {

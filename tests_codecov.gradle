@@ -99,6 +99,13 @@ jacocoTestReport {
         html.enabled = true
         csv.enabled = false
     }
+
+    afterEvaluate {
+        classDirectories = files(classDirectories.files.collect {
+            // Exclude simple LinkedHashMap subclass from report
+            fileTree(dir: it, exclude: '**/LRUCache$LRUMap*')
+        })
+    }
 }
 
 check.dependsOn jacocoTestCoverageVerification
