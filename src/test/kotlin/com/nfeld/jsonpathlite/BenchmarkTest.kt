@@ -1,11 +1,11 @@
 package com.nfeld.jsonpathlite
 
-import com.jayway.jsonpath.spi.cache.CacheProvider
 import com.jayway.jsonpath.spi.cache.NOOPCache
+import com.nfeld.jsonpathlite.cache.CacheProvider
 import com.nfeld.jsonpathlite.extension.read
 import org.json.JSONArray
 import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.Disabled
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
 class BenchmarkTest : BaseTest() {
@@ -20,10 +20,13 @@ class BenchmarkTest : BaseTest() {
         fun setupClass() {
             println("Setting up BenchmarkTest")
 
-            // disable JsonPath cache for fair benchmarks
-            CacheProvider.setCache(NOOPCache())
-
             printReadmeFormat = System.getProperty("readmeFormat")?.toBoolean() ?: false
+        }
+
+        @JvmStatic
+        @BeforeEach
+        fun resetCache() {
+            resetCacheProvider()
         }
     }
 
@@ -59,12 +62,20 @@ class BenchmarkTest : BaseTest() {
     }
 
     private fun runBenchmarksAndPrintResults(path: String, callsPerRun: Int = DEFAULT_CALLS_PER_RUN, runs: Int = DEFAULT_RUNS) {
+        // first benchmarks will be using caches
         val lite = benchmarkJsonPathLite(path, callsPerRun, runs)
         val other = benchmarkJsonPath(path, callsPerRun, runs)
+
+        // now disable caches
+        CacheProvider.setCache(null)
+        com.jayway.jsonpath.spi.cache.CacheProvider.setCache(NOOPCache())
+        val liteNoCache = benchmarkJsonPathLite(path, callsPerRun, runs)
+        val otherNoCache = benchmarkJsonPath(path, callsPerRun, runs)
+
         if (printReadmeFormat) {
-            println("|  $path  |  ${lite} ms |  ${other} ms |")
+            println("|  $path  |  ${lite} ms |  ${other} ms | $liteNoCache ms | $otherNoCache ms |")
         } else {
-            println("$path   lite: ${lite}, jsonpath: ${other}")
+            println("$path   lite: ${lite}, jsonpath: ${other}   Without caches:  lite: ${liteNoCache}, jsonpath: ${otherNoCache}")
         }
     }
 
@@ -82,15 +93,23 @@ class BenchmarkTest : BaseTest() {
     fun benchmarkPathCompile() {
 
         fun compile(path: String) {
+            // first with caches
             val lite = benchmark { JsonPath(path) }
             val other = benchmark { com.jayway.jsonpath.JsonPath.compile(path) }
+
+            // now disable caches
+            CacheProvider.setCache(null)
+            com.jayway.jsonpath.spi.cache.CacheProvider.setCache(NOOPCache())
+            val liteNoCache = benchmark { JsonPath(path) }
+            val otherNoCache = benchmark { com.jayway.jsonpath.JsonPath.compile(path) }
+
             val numTokens = PathCompiler.compile(path).size
             val name = "${path.length} chars, $numTokens tokens"
 
             if (printReadmeFormat) {
-                println("|  $name  |  ${lite} ms  |  ${other} ms  |")
+                println("|  $name  |  ${lite} ms  |  ${other} ms  | $liteNoCache ms | $otherNoCache ms |")
             } else {
-                println("$name  lite: ${lite}, jsonpath: ${other}")
+                println("$name  lite: ${lite}, jsonpath: ${other}   Without caches:  lite: ${liteNoCache}, jsonpath: ${otherNoCache}")
             }
         }
 
@@ -142,11 +161,11 @@ class BenchmarkTest : BaseTest() {
 
     @Test
     fun benchmarkMultiArrayAccess() {
-        runBenchmarksAndPrintResults("$[0]['tags'][0,3, 5]")
+        runBenchmarksAndPrintResults("$[0]['tags'][0,3,5]")
     }
 
     @Test
     fun benchmarkMultiObjectAccess() {
-        runBenchmarksAndPrintResults("$[0]['latitude','longitude', 'isActive']")
+        runBenchmarksAndPrintResults("$[0]['latitude','longitude','isActive']")
     }
 }

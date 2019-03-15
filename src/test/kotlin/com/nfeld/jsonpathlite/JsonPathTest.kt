@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 
-class JsonPathTest : BaseTest() {
+class JsonPathTest : BaseNoCacheTest() {
 
     // JsonPath::parse related tests
     @Test

@@ -1,5 +1,6 @@
 package com.nfeld.jsonpathlite
 
+import com.nfeld.jsonpathlite.cache.CacheProvider
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
@@ -7,14 +8,22 @@ import org.json.JSONObject
 class JsonPath(path: String) {
 
     private val path: String
-    private val tokens: List<Token>
+    internal val tokens: List<Token>
 
     /**
      * Trim given path string and compile it on initialization
      */
     init {
         this.path = path.trim()
-        tokens = PathCompiler.compile(this.path)
+
+        val cache = CacheProvider.getCache()
+        val cachedJsonPath = cache?.get(this.path)
+        if (cachedJsonPath != null) {
+            tokens = cachedJsonPath.tokens
+        } else {
+            tokens = PathCompiler.compile(this.path)
+            cache?.put(this.path, this)
+        }
     }
 
     /**
@@ -116,7 +125,6 @@ class JsonPath(path: String) {
                 } catch (e: JSONException) {
                     null
                 }
-
             }
         }
     }

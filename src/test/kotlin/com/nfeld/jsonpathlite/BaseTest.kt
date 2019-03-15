@@ -1,6 +1,8 @@
 package com.nfeld.jsonpathlite
 
+import com.nfeld.jsonpathlite.cache.CacheProvider
 import org.json.JSONArray
+import org.junit.jupiter.api.BeforeAll
 
 open class BaseTest {
 
@@ -11,6 +13,21 @@ open class BaseTest {
     }
 
     companion object {
+        // we need to reset this singleton across test suites
+        fun resetCacheProvider() {
+            println("Resetting CacheProvider singleton")
+
+            // use reflection to reset CacheProvider singleton to its initial state
+            CacheProvider.javaClass.getDeclaredField("cache").apply {
+                isAccessible = true
+                set(null, null)
+            }
+            CacheProvider.javaClass.getDeclaredField("useDefault").apply {
+                isAccessible = true
+                set(null, true)
+            }
+        }
+
         const val SMALL_JSON = "{\"key\": 5}"
         const val SMALL_JSON_ARRAY = "[1,2,3,4, $SMALL_JSON]"
         const val LARGE_JSON = "[\n" +

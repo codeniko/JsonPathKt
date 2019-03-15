@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
 
-class TokenTest : BaseTest() {
+class TokenTest : BaseNoCacheTest() {
 
     private fun printTesting(subpath: String) {
         println("Testing like $subpath")
