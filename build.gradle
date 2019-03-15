@@ -12,7 +12,7 @@ ext {
 }
 
 group 'com.nfeld.jsonpathlite'
-version = '1.0.0' + (snapshotVersion ? "-SNAPSHOT" : "")
+version = '1.1.0' + (snapshotVersion ? "-SNAPSHOT" : "")
 
 repositories {
     mavenCentral()
