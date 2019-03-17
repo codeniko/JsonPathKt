@@ -155,7 +155,7 @@ CacheProvider.setCache(null)
 CacheProvider.setCache(object : Cache {
     override fun get(path: String): JsonPath? { ... }
     override fun put(path: String, jsonPath: JsonPath) { ... }
-)
+})
 ```
 
 [![Analytics](https://ga-beacon.appspot.com/UA-116910991-3/jsonpathlite/index)](https://github.com/igrigorik/ga-beacon)
