@@ -1,7 +1,8 @@
 package com.nfeld.jsonpathlite
 
-import org.json.JSONArray
-import org.json.JSONObject
+import com.fasterxml.jackson.databind.node.ArrayNode
+import com.nfeld.jsonpathlite.util.createArrayNode
+import com.nfeld.jsonpathlite.util.createObjectNode
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
@@ -14,33 +15,33 @@ class TokenTest : BaseNoCacheTest() {
 
     @Test
     fun arrayAccessorToken() {
-        assertNull(ArrayAccessorToken(0).read(JSONObject()))
+        assertNull(ArrayAccessorToken(0).read(createObjectNode()))
     }
 
     @Test
     fun multiArrayAccessorToken() {
-        assertNull(MultiArrayAccessorToken(listOf(0)).read(JSONObject()))
+        assertNull(MultiArrayAccessorToken(listOf(0)).read(createObjectNode()))
 
-        val expected = JSONArray().apply {
-            put(1)
-            put(3)
+        val expected = createArrayNode().apply {
+            add(1)
+            add(3)
         }
-        assertEquals(expected.toString(), MultiArrayAccessorToken(listOf(0, -1)).read(JSONArray().apply {
-            put(1)
-            put(2)
-            put(3)
+        assertEquals(expected.toString(), MultiArrayAccessorToken(listOf(0, -1)).read(createArrayNode().apply {
+            add(1)
+            add(2)
+            add(3)
         }).toString())
     }
 
     @Test
     fun arrayLengthBasedRangeAccessorToken() {
-        assertNull(ArrayLengthBasedRangeAccessorToken(0).read(JSONObject()))
-        assertEquals(JSONArray().toString(), ArrayLengthBasedRangeAccessorToken(0, -1, 0).read(JSONArray()).toString())
+        assertNull(ArrayLengthBasedRangeAccessorToken(0).read(createObjectNode()))
+        assertEquals(createArrayNode().toString(), ArrayLengthBasedRangeAccessorToken(0, -1, 0).read(createArrayNode()).toString())
     }
 
     @Test
     fun arrayLengthBasedAccessorTokenToMultiArrayAccessorToken() {
-        val json = JSONArray("[0,1,2,3,4]")
+        val json = readTree("[0,1,2,3,4]") as ArrayNode
 
         printTesting("[0:]")
         var res = ArrayLengthBasedRangeAccessorToken(0,null, 0).toMultiArrayAccessorToken(json)
@@ -92,7 +93,7 @@ class TokenTest : BaseNoCacheTest() {
 
     @Test
     fun deepScanLengthBasedArrayAccessorToken() {
-        val json = JSONArray("[0,1,2,3,4]")
+        val json = readTree("[0,1,2,3,4]") as ArrayNode
 
         printTesting("[0:]")
         var res = DeepScanLengthBasedArrayAccessorToken(0,null, 0).read(json).toString()
@@ -125,11 +126,11 @@ class TokenTest : BaseNoCacheTest() {
 
     @Test
     fun objectAccessorToken() {
-        assertNull(ObjectAccessorToken("key").read(JSONArray()))
+        assertNull(ObjectAccessorToken("key").read(createArrayNode()))
     }
 
     @Test
     fun multiObjectAccessorToken() {
-        assertNull(MultiObjectAccessorToken(listOf()).read(JSONArray()))
+        assertNull(MultiObjectAccessorToken(listOf()).read(createArrayNode()))
     }
 }

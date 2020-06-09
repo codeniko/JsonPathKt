@@ -1,14 +1,15 @@
 package com.nfeld.jsonpathlite
 
+import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.node.ArrayNode
+import com.fasterxml.jackson.module.kotlin.convertValue
 import com.nfeld.jsonpathlite.cache.CacheProvider
-import org.json.JSONArray
-import org.json.JSONException
-import org.json.JSONObject
+import com.nfeld.jsonpathlite.util.JacksonUtil
 
 class JsonPath(path: String) {
 
     private val path: String
-    internal val tokens: List<Token>
+    val tokens: List<Token>
 
     /**
      * Trim given path string and compile it on initialization
@@ -31,57 +32,44 @@ class JsonPath(path: String) {
      *
      * @return Given type if value in path exists, null otherwise
      */
-    fun <T : Any> readFromJson(jsonString: String): T? {
-        /*
-        We don't need to parse this string into own JsonResult wrapper as we don't need those convenience methods at this point.
-        Use org.json directly based on first character of given string. Also pass it to private readFromJson method directly to skip a stack frame
-         */
-        val trimmedJson = jsonString.trim()
-        return when (trimmedJson.firstOrNull()) {
-            '{' -> _readFromJson(JSONObject(trimmedJson))
-            '[' -> _readFromJson(JSONArray(trimmedJson))
-            else -> null
-        }
+    inline fun <reified T : Any> readFromJson(jsonString: String): T? {
+        return parse(jsonString)?.let { readFromJson(it) }
     }
 
     /**
-     * Read the value at path in given JSON Object
+     * Read the value at path in given jackson JsonNode Object
      *
      * @return Given type if value in path exists, null otherwise
      */
-    fun <T : Any> readFromJson(jsonObject: JSONObject): T? = _readFromJson(jsonObject)
-
-    /**
-     * Read the value at path in given JSON Array
-     *
-     * @return Given type if value in path exists, null otherwise
-     */
-    fun <T : Any> readFromJson(jsonArray: JSONArray): T? = _readFromJson(jsonArray)
-
-    @Suppress("UNCHECKED_CAST")
-    private fun <T : Any> _readFromJson(json: Any): T? {
-        var valueAtPath: Any? = json
-        tokens.forEach { token ->
-            valueAtPath?.let { valueAtPath = token.read(it) }
-        }
-        val lastValue = valueAtPath
-        if (lastValue is JSONArray && containsOnlyPrimitives(lastValue)) {
-            valueAtPath = lastValue.toList().toList() // return immutable list
-        } else if (lastValue == JSONObject.NULL) {
+    inline fun <reified T : Any> readFromJson(json: JsonNode): T? {
+        if (json.isMissingNode || json.isNull) {
             return null
         }
-        return valueAtPath as? T
+
+        val lastValue = tokens.fold(initial = json) { valueAtPath: Any?, nextToken: Token ->
+            valueAtPath?.let { nextToken.read(it) }
+        }
+
+        return when {
+            lastValue == null -> null
+            lastValue is JsonNode && (lastValue.isNull || lastValue.isMissingNode) -> null
+            else -> {
+                try {
+                    JacksonUtil.mapper.convertValue<T>(lastValue)
+                } catch (e: Exception) {
+                    null
+                }
+            }
+        }
     }
 
     /**
-     * Check if a JSONArray contains only primitive values (in this case, non-JSONObject/JSONArray).
+     * Check if a ArrayNode contains only primitive values (in this case, non-ObjectNode/ArrayNode).
      */
-    private fun containsOnlyPrimitives(jsonArray: JSONArray) : Boolean {
-        val it = jsonArray.iterator()
-        while (it.hasNext()) {
-            val item = it.next()
-            if (item is JSONObject || item is JSONArray) {
-                return false
+    private fun containsOnlyPrimitives(arrayNode: ArrayNode) : Boolean {
+        arrayNode.forEach {
+            if (it.isObject || it.isArray) {
+                return false // fail fast
             }
         }
         return true
@@ -93,39 +81,24 @@ class JsonPath(path: String) {
 
     companion object {
         /**
-         * Parse JSON string and return successful [JsonResult] or throw [JSONException] on parsing error
+         * Parse JSON string and return successful [JsonNode] or null otherwise
          *
          * @param jsonString JSON string to parse
-         * @return instance of parsed [JsonResult] object
-         * @throws JSONException
-         */
-        @Throws(JSONException::class)
-        @JvmStatic
-        fun parse(jsonString: String): JsonResult = when {
-            jsonString.isEmpty() -> throw JSONException("JSON string is empty")
-            jsonString.first() == '{' -> JsonObject(JSONObject(jsonString))
-            else -> JsonArray(JSONArray(jsonString))
-        }
-
-        /**
-         * Parse JSON string and return successful [JsonResult] or null otherwise
-         *
-         * @param jsonString JSON string to parse
-         * @return instance of parsed [JsonResult] object or null
+         * @return instance of parsed jackson [JsonNode] object, or null
          */
         @JvmStatic
-        fun parseOrNull(jsonString: String): JsonResult? {
-            return jsonString.firstOrNull()?.run {
+        fun parse(jsonString: String?): JsonNode? {
+            return jsonString?.let {
                 try {
-                    if (this == '{') {
-                        JsonObject(JSONObject(jsonString))
-                    } else {
-                        JsonArray(JSONArray(jsonString))
-                    }
-                } catch (e: JSONException) {
+                    val parsed = JacksonUtil.mapper.readTree(jsonString)
+                    if (!parsed.isMissingNode && !parsed.isNull) {
+                        parsed
+                    } else null
+                } catch (e: Exception) {
                     null
                 }
             }
         }
+
     }
 }

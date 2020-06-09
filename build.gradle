@@ -9,10 +9,11 @@ plugins {
 ext {
     publishBuildScan = false
     snapshotVersion = true
+    jacksonVersion = '2.11.0'
 }
 
 group 'com.nfeld.jsonpathlite'
-version = '1.1.1' + (snapshotVersion ? "-SNAPSHOT" : "")
+version = '2.0.0' + (snapshotVersion ? "-SNAPSHOT" : "")
 
 repositories {
     mavenCentral()
@@ -20,10 +21,9 @@ repositories {
 
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
-    api "org.json:json:20180813"
-    api "com.fasterxml.jackson.core:jackson-core:2.9.9"
-    api "com.fasterxml.jackson.core:jackson-databind:2.9.9"
-//    api "com.dslplatform:dsl-json-java8:1.9.3"
+    api "com.fasterxml.jackson.core:jackson-core:$jacksonVersion"
+    api "com.fasterxml.jackson.core:jackson-databind:$jacksonVersion"
+    implementation "com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion"
 }
 
 compileKotlin {

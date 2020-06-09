@@ -1,8 +1,9 @@
 package com.nfeld.jsonpathlite
 
+import com.jayway.jsonpath.Configuration
 import com.jayway.jsonpath.spi.cache.NOOPCache
+import com.jayway.jsonpath.spi.json.JacksonJsonProvider
 import com.nfeld.jsonpathlite.cache.CacheProvider
-import org.json.JSONArray
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 
@@ -22,10 +23,12 @@ class BenchmarkTest : BaseTest() {
         }
     }
 
+
+
     private val timestamp: Long
         get() = System.currentTimeMillis()
 
-    private inline fun benchmark(callsPerRun: Int = DEFAULT_CALLS_PER_RUN, runs: Int = DEFAULT_RUNS, f: () -> Unit): Long {
+    private fun benchmark(callsPerRun: Int = DEFAULT_CALLS_PER_RUN, runs: Int = DEFAULT_RUNS, f: () -> Unit): Long {
         // warmup
         f()
 
@@ -44,13 +47,14 @@ class BenchmarkTest : BaseTest() {
     }
 
     private fun benchmarkJsonPathLite(path: String, callsPerRun: Int = DEFAULT_CALLS_PER_RUN, runs: Int = DEFAULT_RUNS): Long {
-        val jsonArray = JSONArray(LARGE_JSON) // pre-parse json
-        return benchmark(callsPerRun, runs) { JsonPath(path).readFromJson<String>(jsonArray) }
+        val json = JsonPath.parse(LARGE_JSON)!! // pre-parse json
+        return benchmark(callsPerRun, runs) { JsonPath(path).readFromJson<Any>(json) }
     }
 
     private fun benchmarkJsonPath(path: String, callsPerRun: Int = DEFAULT_CALLS_PER_RUN, runs: Int = DEFAULT_RUNS): Long {
-        val documentContext = com.jayway.jsonpath.JsonPath.parse(LARGE_JSON) // pre-parse json
-        return benchmark(callsPerRun, runs) { documentContext.read<String>(path) }
+        val jaywayConfig = Configuration.defaultConfiguration().jsonProvider(JacksonJsonProvider())
+        val documentContext = com.jayway.jsonpath.JsonPath.parse(LARGE_JSON, jaywayConfig) // pre-parse json
+        return benchmark(callsPerRun, runs) { documentContext.read<Any>(path) }
     }
 
     private fun runBenchmarksAndPrintResults(path: String, callsPerRun: Int = DEFAULT_CALLS_PER_RUN, runs: Int = DEFAULT_RUNS) {
@@ -140,7 +144,9 @@ class BenchmarkTest : BaseTest() {
         val runs = 10
         runBenchmarksAndPrintResults("$..[:2]", callsPerRun, runs)
         runBenchmarksAndPrintResults("$..[2:]", callsPerRun, runs)
-        runBenchmarksAndPrintResults("$..[1:-1]", callsPerRun, runs)
+
+        // jayway jsonpath gives empty response for this so not valid comparison
+        // runBenchmarksAndPrintResults("$..[1:-1]", callsPerRun, runs)
     }
 
     @Test

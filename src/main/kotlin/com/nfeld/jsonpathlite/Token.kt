@@ -1,49 +1,51 @@
 package com.nfeld.jsonpathlite
 
-import org.json.JSONArray
-import org.json.JSONObject
+import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.node.ArrayNode
+import com.fasterxml.jackson.databind.node.ObjectNode
+import com.nfeld.jsonpathlite.util.JacksonUtil
 
 /**
- * Accesses value at [index] from [JSONArray]
+ * Accesses value at [index] from [ArrayNode]
  *
  * @param index index to access, can be negative which means to access from end
  */
 internal data class ArrayAccessorToken(val index: Int) : Token {
     override fun read(json: Any): Any? {
-        if (json is JSONArray) {
+        if (json is ArrayNode) {
             if (index < 0) {
                 // optimized to get array length only if we're accessing from last
-                val indexFromLast = json.length() + index
+                val indexFromLast = json.size() + index
                 if (indexFromLast >= 0) {
-                    return json.opt(indexFromLast)
+                    return json.get(indexFromLast)
                 }
             }
-            return json.opt(index)
+            return json.get(index)
         }
         return null
     }
 }
 
 /**
- * Accesses values at [indices] from [JSONArray]. When read, value returned will be [JSONArray] of values
+ * Accesses values at [indices] from [ArrayNode]. When read, value returned will be [ArrayNode] of values
  * at requested indices in given order.
  *
  * @param indices indices to access, can be negative which means to access from end
  */
 internal data class MultiArrayAccessorToken(val indices: List<Int>) : Token {
     override fun read(json: Any): Any? {
-        val result = JSONArray()
+        val result = JacksonUtil.mapper.createArrayNode()
 
-        if (json is JSONArray) {
-            val jsonLength = json.length()
+        if (json is ArrayNode) {
+            val size = json.size()
             indices.forEach { index ->
                 if (index < 0) {
-                    val indexFromLast = jsonLength + index
+                    val indexFromLast = size + index
                     if (indexFromLast >= 0) {
-                        json.opt(indexFromLast)?.let { result.put(it) }
+                        json.get(indexFromLast)?.let { result.add(it) }
                     }
                 } else {
-                    json.opt(index)?.let { result.put(it) }
+                    json.get(index)?.let { result.add(it) }
                 }
             }
             return result
@@ -53,8 +55,8 @@ internal data class MultiArrayAccessorToken(val indices: List<Int>) : Token {
 }
 
 /**
- * Accesses values from [JSONArray] in range from [startIndex] to either [endIndex] or [offsetFromEnd] from end.
- * When read, value returned will be JSONArray of values at requested indices in order of values in range.
+ * Accesses values from [ArrayNode] in range from [startIndex] to either [endIndex] or [offsetFromEnd] from end.
+ * When read, value returned will be ArrayNode of values at requested indices in order of values in range.
  *
  * @param startIndex starting index of range, inclusive. Can be negative.
  * @param endIndex ending index of range, exclusive. Null if using [offsetFromEnd]
@@ -64,22 +66,22 @@ internal data class ArrayLengthBasedRangeAccessorToken(val startIndex: Int,
                                                        val endIndex: Int? = null,
                                                        val offsetFromEnd: Int = 0) : Token {
     override fun read(json: Any): Any? {
-        val token = if (json is JSONArray) {
+        val token = if (json is ArrayNode) {
              toMultiArrayAccessorToken(json)
         } else null
         return token?.read(json)
     }
 
-    fun toMultiArrayAccessorToken(json: JSONArray): MultiArrayAccessorToken? {
-        val len = json.length()
+    fun toMultiArrayAccessorToken(json: ArrayNode): MultiArrayAccessorToken? {
+        val size = json.size()
         val start = if (startIndex < 0) {
-            len + startIndex
+            size + startIndex
         } else startIndex
 
         // use endIndex if we have it, otherwise calculate from json array length
         val endInclusive = if (endIndex != null) {
             endIndex - 1
-        } else len + offsetFromEnd - 1
+        } else size + offsetFromEnd - 1
 
         if (start >= 0 && endInclusive >= start) {
             return MultiArrayAccessorToken(IntRange(start, endInclusive).toList())
@@ -89,32 +91,33 @@ internal data class ArrayLengthBasedRangeAccessorToken(val startIndex: Int,
 }
 
 /**
- * Accesses value at [key] from [JSONObject]
+ * Accesses value at [key] from [ObjectNode]
  *
  * @param index index to access, can be negative which means to access from end
  */
 internal data class ObjectAccessorToken(val key: String) : Token {
     override fun read(json: Any): Any? {
-        return if (json is JSONObject) {
-            json.opt(key)
+        return if (json is ObjectNode) {
+            // println("ObjectAccessorToken" + json.get(key))
+            json.get(key)
         } else null
     }
 }
 
 /**
- * Accesses values at [keys] from [JSONObject]. When read, value returned will be [JSONObject]
+ * Accesses values at [keys] from [ObjectNode]. When read, value returned will be [ObjectNode]
  * containing key/value pairs requested. Keys that are null or don't exist won't be added in Object
  *
  * @param keys keys to access for which key/values to return
  */
 internal data class MultiObjectAccessorToken(val keys: List<String>) : Token {
     override fun read(json: Any): Any? {
-        val result = JSONObject()
+        val result = JacksonUtil.mapper.createObjectNode()
 
-        return if (json is JSONObject) {
+        return if (json is ObjectNode) {
             keys.forEach { key ->
-                json.opt(key)?.let {
-                    result.put(key, it)
+                json.get(key)?.let {
+                    result.replace(key, it)
                 }
             }
             result
@@ -123,40 +126,40 @@ internal data class MultiObjectAccessorToken(val keys: List<String>) : Token {
 }
 
 /**
- * Recursive scan for values with keys in [targetKeys] list. Returns a [JSONArray] containing values found.
+ * Recursive scan for values with keys in [targetKeys] list. Returns a [ArrayNode] containing values found.
  *
  * @param targetKeys keys to find values for
  */
 internal data class DeepScanObjectAccessorToken(val targetKeys: List<String>) : Token {
-    private fun scan(jsonValue: Any, result: JSONArray) {
+    private fun scan(jsonValue: Any, result: ArrayNode) {
         when (jsonValue) {
-            is JSONObject -> {
+            is ObjectNode -> {
                 // first add all values from keys requested to our result
                 if (targetKeys.size > 1) {
-                    val resultToAdd = JSONObject()
+                    val resultToAdd = JacksonUtil.mapper.createObjectNode()
                     targetKeys.forEach { targetKey ->
-                        jsonValue.opt(targetKey)?.let { resultToAdd.put(targetKey, it) }
+                        jsonValue.get(targetKey)?.let { resultToAdd.replace(targetKey, it) }
                     }
                     if (!resultToAdd.isEmpty) {
-                        result.put(resultToAdd)
+                        result.add(resultToAdd)
                     }
                 } else {
                     targetKeys.firstOrNull()?.let { key ->
-                        jsonValue.opt(key)?.let { result.put(it) }
+                        jsonValue.get(key)?.let { result.add(it) }
                     }
                 }
 
                 // recursively scan all underlying objects/arrays
-                jsonValue.keys().forEach { objKey ->
-                    val objValue = jsonValue.opt(objKey)
-                    if (objValue is JSONObject || objValue is JSONArray) {
+                jsonValue.fieldNames().forEach { objKey ->
+                    val objValue = jsonValue.get(objKey)
+                    if (objValue is ObjectNode || objValue is ArrayNode) {
                         scan(objValue, result)
                     }
                 }
             }
-            is JSONArray -> {
+            is ArrayNode -> {
                 jsonValue.forEach {
-                    if (it is JSONObject || it is JSONArray) {
+                    if (it is ObjectNode || it is ArrayNode) {
                         scan(it, result)
                     }
                 }
@@ -166,38 +169,38 @@ internal data class DeepScanObjectAccessorToken(val targetKeys: List<String>) : 
     }
 
     override fun read(json: Any): Any? {
-        val result = JSONArray()
+        val result = JacksonUtil.mapper.createArrayNode()
         scan(json, result)
         return result
     }
 }
 
 /**
- * Recursive scan for values/objects/arrays found for all [indices] specified. Returns a [JSONArray] containing results found.
+ * Recursive scan for values/objects/arrays found for all [indices] specified. Returns a [ArrayNode] containing results found.
  *
  * @param indices indices to retrieve values/objects for
  */
 internal data class DeepScanArrayAccessorToken(val indices: List<Int>) : Token {
-    private fun scan(jsonValue: Any, result: JSONArray) {
+    private fun scan(jsonValue: Any, result: ArrayNode) {
         when (jsonValue) {
-            is JSONObject -> {
+            is ObjectNode -> {
                 // traverse all key/value pairs and recursively scan underlying objects/arrays
-                jsonValue.keys().forEach { objKey ->
-                    val objValue = jsonValue.opt(objKey)
-                    if (objValue is JSONObject || objValue is JSONArray) {
+                jsonValue.fieldNames().forEach { objKey ->
+                    val objValue = jsonValue.get(objKey)
+                    if (objValue is ObjectNode || objValue is ArrayNode) {
                         scan(objValue, result)
                     }
                 }
             }
-            is JSONArray -> {
+            is ArrayNode -> {
                 // first add all requested indices to our results
                 indices.forEach { index ->
-                    ArrayAccessorToken(index).read(jsonValue)?.let { result.put(it) }
+                    ArrayAccessorToken(index).read(jsonValue)?.let { result.add(it as JsonNode) }
                 }
 
                 // now recursively scan underlying objects/arrays
                 jsonValue.forEach {
-                    if (it is JSONObject || it is JSONArray) {
+                    if (it is ObjectNode || it is ArrayNode) {
                         scan(it, result)
                     }
                 }
@@ -207,7 +210,7 @@ internal data class DeepScanArrayAccessorToken(val indices: List<Int>) : Token {
     }
 
     override fun read(json: Any): Any? {
-        val result = JSONArray()
+        val result = JacksonUtil.mapper.createArrayNode()
         scan(json, result)
         return result
     }
@@ -215,8 +218,8 @@ internal data class DeepScanArrayAccessorToken(val indices: List<Int>) : Token {
 
 
 /**
- * Recursive scan for values/objects/arrays from [JSONArray] in range from [startIndex] to either [endIndex] or [offsetFromEnd] from end.
- * When read, value returned will be JSONArray of values at requested indices in order of values in range. Returns a [JSONArray] containing results found.
+ * Recursive scan for values/objects/arrays from [ArrayNode] in range from [startIndex] to either [endIndex] or [offsetFromEnd] from end.
+ * When read, value returned will be ArrayNode of values at requested indices in order of values in range. Returns a [ArrayNode] containing results found.
  *
  * @param startIndex starting index of range, inclusive. Can be negative.
  * @param endIndex ending index of range, exclusive. Null if using [offsetFromEnd]
@@ -225,29 +228,29 @@ internal data class DeepScanArrayAccessorToken(val indices: List<Int>) : Token {
 internal data class DeepScanLengthBasedArrayAccessorToken(val startIndex: Int,
                                                           val endIndex: Int? = null,
                                                           val offsetFromEnd: Int = 0) : Token {
-    private fun scan(jsonValue: Any, result: JSONArray) {
+    private fun scan(jsonValue: Any, result: ArrayNode) {
         when (jsonValue) {
-            is JSONObject -> {
+            is ObjectNode -> {
                 // traverse all key/value pairs and recursively scan underlying objects/arrays
-                jsonValue.keys().forEach { objKey ->
-                    val objValue = jsonValue.opt(objKey)
-                    if (objValue is JSONObject || objValue is JSONArray) {
+                jsonValue.fieldNames().forEach { objKey ->
+                    val objValue = jsonValue.get(objKey)
+                    if (objValue is ObjectNode || objValue is ArrayNode) {
                         scan(objValue, result)
                     }
                 }
             }
-            is JSONArray -> {
+            is ArrayNode -> {
                 ArrayLengthBasedRangeAccessorToken(startIndex, endIndex, offsetFromEnd)
                     .toMultiArrayAccessorToken(jsonValue)
                     ?.read(jsonValue)
                     ?.let { resultAny ->
-                        val resultArray = resultAny as? JSONArray
-                        resultArray?.forEach { result.put(it) }
+                        val resultArray = resultAny as? ArrayNode
+                        resultArray?.forEach { result.add(it) }
                     }
 
                 // now recursively scan underlying objects/arrays
                 jsonValue.forEach {
-                    if (it is JSONObject || it is JSONArray) {
+                    if (it is ObjectNode || it is ArrayNode) {
                         scan(it, result)
                     }
                 }
@@ -257,19 +260,19 @@ internal data class DeepScanLengthBasedArrayAccessorToken(val startIndex: Int,
     }
 
     override fun read(json: Any): Any? {
-        val result = JSONArray()
+        val result = JacksonUtil.mapper.createArrayNode()
         scan(json, result)
         return result
     }
 }
 
-internal interface Token {
+interface Token {
     /**
-     * Takes in JSONObject/JSONArray and outputs next JSONObject/JSONArray or value by evaluating token against current object/array in path
-     * Unfortunately needs to be done with Any since [org.json.JSONObject] and [org.json.JSONArray] do not implement a common interface :(
+     * Takes in ObjectNode/ArrayNode and outputs next ObjectNode/ArrayNode or value by evaluating token against current object/array in path
+     * Unfortunately needs to be done with Any since [org.json.ObjectNode] and [org.json.ArrayNode] do not implement a common interface :(
      *
-     * @param json [JSONObject] or [JSONArray]
-     * @return [JSONObject], [JSONArray], or any JSON primitive value
+     * @param json [ObjectNode] or [ArrayNode]
+     * @return [ObjectNode], [ArrayNode], or any JSON primitive value
      */
     fun read(json: Any): Any?
 }

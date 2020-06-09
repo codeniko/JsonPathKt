@@ -4,9 +4,47 @@
 [![codecov](https://codecov.io/gh/codeniko/JsonPathLite/branch/master/graph/badge.svg)](https://codecov.io/gh/codeniko/JsonPathLite)
 
 **A lighter and more efficient implementation of JsonPath in Kotlin.**
-With functional programming aspects found in langauges like Kotlin, Scala, and streams/lambdas in Java8, this library simplifies other implementations like [Jayway's JsonPath](https://github.com/json-path/JsonPath) by removing *filter operations* and *in-path functions* to focus solely on what matters most: modern fast value extractions from JSON objects. Up to **6x more efficient** in some cases; see [Benchmarks](#benchmarks).
+With functional programming aspects found in langauges like Kotlin, Scala, and streams/lambdas in Java8, this
+library simplifies other implementations like [Jayway's JsonPath](https://github.com/json-path/JsonPath) by removing 
+*filter operations* and *in-path functions* to focus on what matters most: modern fast value extractions from JSON objects. 
+Up to **2x more efficient** in most cases; see [Benchmarks](#benchmarks).
 
-In order to make the library functional programming friendly, JsonPathLite returns *null* rather than throwing exceptions while evaluating a *path* against a JSON object. Throwing exceptions breaks flow control and should be reserved for exceptional errors only.
+In order to make the library functional programming friendly, JsonPathLite returns `null` instead of throwing exceptions 
+while evaluating a path against a JSON object. Throwing exceptions breaks flow control and should be reserved for exceptional 
+errors only.
+
+## Code examples
+A jsonpath that exists returns that value. `null` is returned when it doesn't.
+```kotlin
+val json = """{"hello": "world"}"""
+JsonPath.parse(json)?.read<String>("$.hello") // returns "world"
+JsonPath.parse(json)?.read<String>("$.somethingelse") // returns null since "somethingelse" key not found
+```
+
+A jsonpath that returns a collection containing the 2nd and 3rd items in the list (index 0 based and exclusive at range end).
+```kotlin
+val json = """{"list": ["a","b","c","d"]}"""
+JsonPath.parse(json)?.read<List<String>>("$.list[1:3]") // returns listOf("b", "c")
+```
+
+JsonPathLite also works with `Map` and POJO.
+```kotlin
+val json = """[{ "outer": {"inner": 1} }]"""
+JsonPath.parse(json)?.read<Map<String, Int>>("$[0].outer") // returns mapOf("inner" to 1)
+data class ParsedResult(val outer: Map<String, Int>) // define this class in file scope, not in function scope which will anonymize it 
+JsonPath.parse(json)?.read<ParsedResult>("$[0]") // returns ParsedResult instance
+```
+
+Internally, a jsonpath is compiled into a list of tokens. You can compile a complex jsonpath once and reuse it across multiple JSON strings.
+```kotlin
+val jsonpath = JsonPath("$.family.children..['name','nickname']")
+jsonpath.readFromJson<List<Map<String, String>>>(json1)
+jsonpath.readFromJson<List<Map<String, String>>>(json2)
+```
+
+*JsonPathLite uses [Jackson](https://github.com/FasterXML/jackson) to deserialize JSON strings. `JsonPath.parse` returns a Jackson 
+`JsonNode` object, so if you've already deserialized, you can also `read` the jsonpath value directly.*
+
 
 ## Getting started
 JsonPathLite is available at the Maven Central repository.
@@ -16,7 +54,7 @@ JsonPathLite is available at the Maven Central repository.
 <dependency>
   <groupId>com.nfeld.jsonpathlite</groupId>
   <artifactId>json-path-lite</artifactId>
-  <version>1.1.0</version>
+  <version>2.0.0</version>
   <type>pom</type>
 </dependency>
 ```
@@ -24,7 +62,7 @@ JsonPathLite is available at the Maven Central repository.
 **Gradle**
 ```gradle
 dependencies {
-    implementation 'com.nfeld.jsonpathlite:json-path-lite:1.1.0'
+    implementation 'com.nfeld.jsonpathlite:json-path-lite:2.0.0'
 }
 ```
 
@@ -47,7 +85,7 @@ $['family']['children'][0]['name']
 $['family'].children[0].name
 ```
 
-Given the json:
+Given the JSON:
 ```json
 {
     "family": {
@@ -91,28 +129,6 @@ Given the json:
 | $.family.children[:3]..age     |  The ages of first three children |
 | $..['name','nickname']    |  Names & nicknames (if any) of all children |
 
-## Code examples
-When parsing a JSON, you have the flexibility to either return null or to throw org.json.JSONException on parsing failure.
-```kotlin
-val json = "{\"hello\": \"world\"}"
-val jsonResult = JsonPath.parseOrNull(json)
-jsonResult?.read<String>("$.hello") // returns "world"
-jsonResult?.read<Double>("$.otherkey") // returns null
-
-val json2 = "{\"list\": [1,2,3,4]}"
-JsonPath.parseOrNull(json2)?.read<List<Int>>("$.list[1:3]") // returns listOf(2, 3)
-
-val json3 = "[{\"outer\": {\"inner\": 1}}]"
-JsonPath.parseOrNull(json3)?.read<org.json.JSONObject>("$[0].outer") // returns JSONObject
-JsonPath.parseOrNull(json3)?.read<org.json.JSONArray>("$") // returns JSONArray
-```
-
-JsonPathLite uses [org.json](https://mvnrepository.com/artifact/org.json/json) to decode JSON strings. If you happen to use kotlin in your project, you can evaluate a path against `org.json.JSONObject` and `org.json.JSONArray` directly with the included extension functions:
-```kotlin
-JSONObject("{\"key\":\"value\"}").read<String>("$.key") // returns "value"
-JSONArray("[0,1,2,3,4,5]").read<List<Int>("$[2:]") // returns listOf(2, 3, 4, 5)
-```
-
 ## Benchmarks
 These are benchmark tests of JsonPathLite against Jayway's JsonPath implementation. Results for each test is the average of 30 runs with 80,000 reads per run. You can run these test locally with `./runBenchmarks.sh`
 
@@ -120,30 +136,31 @@ These are benchmark tests of JsonPathLite against Jayway's JsonPath implementati
 
 | Path Tested | JsonPathLite (ms) | JsonPath (ms) |
 | :---------- | :------ | :----- |
-|  $[0]['tags'][3:]  |  67 ms *(34 ms w/ cache)* |  134 ms *(94 ms w/ cache)*  |
-|  $[0]['tags'][0,3,5]  |  64 ms *(15 ms w/ cache)* |  140 ms *(65 ms w/ cache)*  |
-|  $..[:2]  |  94 ms *(88 ms w/ cache)* |  581 ms *(564 ms w/ cache)*  |
-|  $..[2:]  |  134 ms *(147 ms w/ cache)* |  568 ms *(537 ms w/ cache)*  |
-|  $..[1:-1]  |  134 ms *(125 ms w/ cache)* |  445 ms *(433 ms w/ cache)*  |
-|  $[2]._id  |  28 ms *(6 ms w/ cache)* |  64 ms *(36 ms w/ cache)*  |
-|  $[0]['tags'][3:5]  |  67 ms *(18 ms w/ cache)* |  116 ms *(61 ms w/ cache)*  |
-|  $[0]['tags'][-3]  |  46 ms *(5 ms w/ cache)* |  101 ms *(45 ms w/ cache)*  |
-|  $[0].friends[1].other.a.b['c']  |  70 ms *(10 ms w/ cache)* |  167 ms *(82 ms w/ cache)*  |
-|  $..name  |  88 ms *(93 ms w/ cache)* |  566 ms *(624 ms w/ cache)*  |
-|  $..['email','name']  |  128 ms *(138 ms w/ cache)* |  570 ms *(564 ms w/ cache)*  |
-|  $..[1]  |  84 ms *(89 ms w/ cache)* |  493 ms *(481 ms w/ cache)*  |
-|  $[0]['latitude','longitude','isActive']  |  68 ms *(13 ms w/ cache)* |  136 ms *(74 ms w/ cache)*  |
-|  $[0]['tags'][:3]  |  66 ms *(19 ms w/ cache)* |  126 ms *(71 ms w/ cache)*  |
+|  $[0]['tags'][3:]  |  72 ms *(53 ms w/ cache)* |  107 ms *(70 ms w/ cache)*  |
+|  $[0]['tags'][0,3,5]  |  67 ms *(30 ms w/ cache)* |  121 ms *(50 ms w/ cache)*  |
+|  $..[:2]  |  350 ms *(357 ms w/ cache)* |  428 ms *(449 ms w/ cache)*  |
+|  $..[2:]  |  420 ms *(430 ms w/ cache)* |  447 ms *(441 ms w/ cache)*  |
+|  $..[1:-1]  |  487 ms *(479 ms w/ cache)* |  365 ms *(350 ms w/ cache)*  |
+|  $[2]._id  |  33 ms *(21 ms w/ cache)* |  51 ms *(28 ms w/ cache)*  |
+|  $[0]['tags'][3:5]  |  74 ms *(27 ms w/ cache)* |  93 ms *(49 ms w/ cache)*  |
+|  $[0]['tags'][-3]  |  51 ms *(16 ms w/ cache)* |  82 ms *(38 ms w/ cache)*  |
+|  $[0].friends[1].other.a.b['c']  |  72 ms *(20 ms w/ cache)* |  145 ms *(73 ms w/ cache)*  |
+|  $..name  |  86 ms *(89 ms w/ cache)* |  473 ms *(533 ms w/ cache)*  |
+|  $..['email','name']  |  199 ms *(200 ms w/ cache)* |  473 ms *(469 ms w/ cache)*  |
+|  $..[1]  |  214 ms *(208 ms w/ cache)* |  403 ms *(396 ms w/ cache)*  |
+|  $[0]['latitude','longitude','isActive']  |  96 ms *(45 ms w/ cache)* |  113 ms *(58 ms w/ cache)*  |
+|  $[0]['tags'][:3]  |  75 ms *(33 ms w/ cache)* |  104 ms *(57 ms w/ cache)*  |
+
 
 **Compiling JsonPath string to internal tokens**
 
 | Path size | JsonPathLite | JsonPath |
 | :-------- | :----------- | :------- |
-|  7 chars, 1 tokens  |  10 ms *(2 ms w/ cache)* |  10 ms *(11 ms w/ cache)* |
-|  16 chars, 3 tokens  |  25 ms *(2 ms w/ cache)* |  31 ms *(32 ms w/ cache)* |
-|  30 chars, 7 tokens  |  50 ms *(1 ms w/ cache)* |  70 ms *(69 ms w/ cache)* |
-|  65 chars, 16 tokens  |  118 ms *(1 ms w/ cache)* |  166 ms *(166 ms w/ cache)* |
-|  88 chars, 19 tokens  |  154 ms *(1 ms w/ cache)* |  225 ms *(227 ms w/ cache)* |
+|  7 chars, 1 tokens  |  9 ms *(2 ms w/ cache)* |  10 ms *(9 ms w/ cache)* |
+|  16 chars, 3 tokens  |  22 ms *(2 ms w/ cache)* |  27 ms *(27 ms w/ cache)* |
+|  30 chars, 7 tokens  |  44 ms *(2 ms w/ cache)* |  66 ms *(66 ms w/ cache)* |
+|  65 chars, 16 tokens  |  103 ms *(2 ms w/ cache)* |  161 ms *(161 ms w/ cache)* |
+|  88 chars, 19 tokens  |  133 ms *(2 ms w/ cache)* |  214 ms *(214 ms w/ cache)* |
 
 # Cache
 JsonPathLite uses an LRU cache by default to cache compiled JsonPath tokens. If you don't want to use the cache, you can disable it or set the CacheProvider to use your own implementation of the Cache interface.
