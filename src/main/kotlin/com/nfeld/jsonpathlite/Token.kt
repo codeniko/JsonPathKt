@@ -131,7 +131,7 @@ internal data class DeepScanObjectAccessorToken(val targetKeys: List<String>) : 
     private fun scan(jsonValue: Any, result: JSONArray) {
         when (jsonValue) {
             is JSONObject -> {
-                // first add all values from keys requested to result
+                // first add all values from keys requested to our result
                 if (targetKeys.size > 1) {
                     val resultToAdd = JSONObject()
                     targetKeys.forEach { targetKey ->
@@ -147,7 +147,7 @@ internal data class DeepScanObjectAccessorToken(val targetKeys: List<String>) : 
                 }
 
                 // recursively scan all underlying objects/arrays
-                jsonValue.keySet().forEach { objKey ->
+                jsonValue.keys().forEach { objKey ->
                     val objValue = jsonValue.opt(objKey)
                     if (objValue is JSONObject || objValue is JSONArray) {
                         scan(objValue, result)
@@ -182,7 +182,7 @@ internal data class DeepScanArrayAccessorToken(val indices: List<Int>) : Token {
         when (jsonValue) {
             is JSONObject -> {
                 // traverse all key/value pairs and recursively scan underlying objects/arrays
-                jsonValue.keySet().forEach { objKey ->
+                jsonValue.keys().forEach { objKey ->
                     val objValue = jsonValue.opt(objKey)
                     if (objValue is JSONObject || objValue is JSONArray) {
                         scan(objValue, result)
@@ -229,7 +229,7 @@ internal data class DeepScanLengthBasedArrayAccessorToken(val startIndex: Int,
         when (jsonValue) {
             is JSONObject -> {
                 // traverse all key/value pairs and recursively scan underlying objects/arrays
-                jsonValue.keySet().forEach { objKey ->
+                jsonValue.keys().forEach { objKey ->
                     val objValue = jsonValue.opt(objKey)
                     if (objValue is JSONObject || objValue is JSONArray) {
                         scan(objValue, result)

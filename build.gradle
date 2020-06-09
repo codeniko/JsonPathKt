@@ -12,7 +12,7 @@ ext {
 }
 
 group 'com.nfeld.jsonpathlite'
-version = '1.1.0' + (snapshotVersion ? "-SNAPSHOT" : "")
+version = '1.1.1' + (snapshotVersion ? "-SNAPSHOT" : "")
 
 repositories {
     mavenCentral()
@@ -21,6 +21,9 @@ repositories {
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
     api "org.json:json:20180813"
+    api "com.fasterxml.jackson.core:jackson-core:2.9.9"
+    api "com.fasterxml.jackson.core:jackson-databind:2.9.9"
+//    api "com.dslplatform:dsl-json-java8:1.9.3"
 }
 
 compileKotlin {
