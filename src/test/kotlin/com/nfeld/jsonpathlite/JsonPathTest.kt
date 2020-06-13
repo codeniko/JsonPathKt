@@ -499,13 +499,17 @@ class JsonPathTest : BaseNoCacheTest() {
     }
 
     // TODO implement $.* token
-//    @Test
-//    fun shouldPreserveOrder() {
+    @Test
+    fun shouldPreserveOrder() {
+        val result1 = JsonPath("$.store..price").readFromJson<List<Double>>(BOOKS_JSON)
+        assertEquals(listOf(8.95, 12.99, 8.99, 22.99, 19.95), result1)
+
+
 //        val json = """{"d": 4, "f": 6, "e": 5, "a": 1, "b": 2, "c": 3}"""
 //        val jacksonResult = JacksonUtil.mapper.readTree(json).read<List<Int>>("$.*")
 //        val jsonOrgResult = JSONObject(json).read<List<Int>>("$.*")
 //        assertNotEquals(jacksonResult.toString(), jsonOrgResult.toString())
-//    }
+    }
 }
 
 data class ParsedResult(val outer: Map<String, Int>)
