@@ -89,6 +89,11 @@ class TokenTest : BaseNoCacheTest() {
         res = ArrayLengthBasedRangeAccessorToken(2,null, -1).toMultiArrayAccessorToken(json)
         expected = MultiArrayAccessorToken(listOf(2,3))
         assertEquals(expected, res)
+
+        printTesting("[:]")
+        res = ArrayLengthBasedRangeAccessorToken(0, null, 0).toMultiArrayAccessorToken(json)
+        expected = MultiArrayAccessorToken(listOf(0,1,2,3,4))
+        assertEquals(expected, res)
     }
 
     @Test

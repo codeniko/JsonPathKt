@@ -158,7 +158,10 @@ internal object PathCompiler {
                 }
 
                 c == ':' && !expectingClosingQuote -> {
-                    if (openingIndex == i - 1) {
+                    if (openingIndex == i - 1 && closingIndex == i + 1) {
+                        hasStartColon = true
+                        hasEndColon = true
+                    } else if (openingIndex == i - 1) {
                         hasStartColon = true
                     } else if (i == closingIndex - 1) {
                         hasEndColon = true
@@ -228,11 +231,17 @@ internal object PathCompiler {
                         MultiArrayAccessorToken(IntRange(start, end - 1).toList())
                     }
                 }
+                hasStartColon && hasEndColon -> {
+                    // take entire list from beginning to end
+                    token = ArrayLengthBasedRangeAccessorToken(0, null, 0)
+                }
                 hasStartColon -> {
                     val end = keys[0].toInt(10) // exclusive
                     token = if (end < 0) {
+                        // take all from beginning to last minus $end
                         ArrayLengthBasedRangeAccessorToken(0, null, end)
                     } else {
+                        // take all from beginning of list up to $end
                         MultiArrayAccessorToken(IntRange(0, end - 1).toList())
                     }
                 }

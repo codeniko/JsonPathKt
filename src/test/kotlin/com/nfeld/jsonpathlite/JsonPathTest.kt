@@ -473,6 +473,31 @@ class JsonPathTest : BaseNoCacheTest() {
         assertNull(JacksonUtil.mapper.nullNode().read("$"))
     }
 
+    @Test
+    fun shouldBeAllItemsInList() {
+        assertEquals(listOf("first", "second"), JsonPath("$[:]").readFromJson<List<String>>("""["first", "second"]"""))
+        assertEquals(listOf("Thomas", "Mila", "Konstantin", "Tracy"), JsonPath("$..name[:]").readFromJson<List<String>>(FAMILY_JSON))
+        assertEquals(listOf(
+            mapOf(
+                "name" to "Thomas",
+                "age" to 13
+            ),
+            mapOf(
+                "name" to "Mila",
+                "age" to 18
+            ),
+            mapOf(
+                "name" to "Konstantin",
+                "age" to 29,
+                "nickname" to "Kons"
+            ),
+            mapOf(
+                "name" to "Tracy",
+                "age" to 4
+            )
+        ), JsonPath("$.family.children[:]").readFromJson<List<Map<String, Any>>>(FAMILY_JSON))
+    }
+
     // TODO implement $.* token
 //    @Test
 //    fun shouldPreserveOrder() {
