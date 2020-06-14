@@ -150,6 +150,11 @@ class JsonPathTest : DescribeSpec({
             JsonPath.parse("""{"key":null}""")!!.read<Int>("$['key']") shouldBe null
         }
 
+        it("should access empty string key") {
+            JsonPath.parse("""{"":4}""")!!.read<Int>("$['']") shouldBe 4
+            JsonPath.parse("""{"":4}""")!!.read<Int>("$[\"\"]") shouldBe 4
+        }
+
         it("should read object keys that have numbers and/or symbols") {
             val key = "!@#\$%^&*()_-+=[]{}|:;<,>.?`~" // excluding '
             val json = """

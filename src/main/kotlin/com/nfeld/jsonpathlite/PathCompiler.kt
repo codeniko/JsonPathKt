@@ -238,17 +238,11 @@ internal object PathCompiler {
                 }
 
                 c == '\'' && isQuoteOpened && isSingleQuote -> { // only valid inside array bracket and ending
-                    if (keyBuilder.isEmpty()) {
-                        throw IllegalArgumentException("Key is empty string")
-                    }
                     buildAndAddKey()
                     isQuoteOpened = false
                 }
 
                 c == '"' && isQuoteOpened && !isSingleQuote -> { // only valid inside array bracket and ending
-                    if (keyBuilder.isEmpty()) {
-                        throw IllegalArgumentException("Key is empty string")
-                    }
                     buildAndAddKey()
                     isQuoteOpened = false
                 }

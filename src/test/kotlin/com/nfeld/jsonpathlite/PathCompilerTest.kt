@@ -117,6 +117,8 @@ class PathCompilerTest : StringSpec({
         assertEquals(ObjectAccessorToken("name:age"), f(findClosingIndex("$['name:age']"), start, end))
         assertEquals(WildcardToken(), f(findClosingIndex("$[*]"), start, end))
         assertEquals(ObjectAccessorToken(""":@."$,*'\"""), f(findClosingIndex("""$[':@."$,*\'\\']"""), start, end))
+        assertEquals(ObjectAccessorToken(""), f(findClosingIndex("$['']"), start, end))
+        assertEquals(ObjectAccessorToken(""), f(findClosingIndex("$[\"\"]"), start, end))
 
         // handle negative values in array ranges
         assertEquals(ArrayLengthBasedRangeAccessorToken(0,null, -1), f(findClosingIndex("$[:-1]"), start, end))
@@ -151,7 +153,6 @@ class PathCompilerTest : StringSpec({
 
         assertThrows<IllegalArgumentException> { compile("") } // path cannot be empty
         assertThrows<IllegalArgumentException> { compile("$[]") } // needs value in brackets
-        assertThrows<IllegalArgumentException> { compile("$['']") } // needs value in quotes
         assertThrows<IllegalArgumentException> { compile("$[") } // needs closing bracket
         assertThrows<IllegalArgumentException> { compile("$[[]") } // invalid char at end
         assertThrows<IllegalArgumentException> { compile("$[[]]") }
