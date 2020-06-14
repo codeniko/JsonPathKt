@@ -119,6 +119,11 @@ class PathCompilerTest : StringSpec({
         assertEquals(ObjectAccessorToken(""":@."$,*'\"""), f(findClosingIndex("""$[':@."$,*\'\\']"""), start, end))
         assertEquals(ObjectAccessorToken(""), f(findClosingIndex("$['']"), start, end))
         assertEquals(ObjectAccessorToken(""), f(findClosingIndex("$[\"\"]"), start, end))
+        assertEquals(ObjectAccessorToken("\\"), f(findClosingIndex("$['\\\\']"), start, end))
+        assertEquals(ObjectAccessorToken("'"), f(findClosingIndex("$['\\'']"), start, end))
+        assertEquals(ObjectAccessorToken("'"), f(findClosingIndex("$[\"'\"]"), start, end))
+        assertEquals(ObjectAccessorToken("\""), f(findClosingIndex("$['\"']"), start, end))
+        assertEquals(ObjectAccessorToken("\""), f(findClosingIndex("""$["\""]"""), start, end))
 
         // handle negative values in array ranges
         assertEquals(ArrayLengthBasedRangeAccessorToken(0,null, -1), f(findClosingIndex("$[:-1]"), start, end))

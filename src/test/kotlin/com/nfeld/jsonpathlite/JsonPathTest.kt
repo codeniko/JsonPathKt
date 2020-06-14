@@ -150,9 +150,14 @@ class JsonPathTest : DescribeSpec({
             JsonPath.parse("""{"key":null}""")!!.read<Int>("$['key']") shouldBe null
         }
 
-        it("should access empty string key") {
+        it("should access empty string key and other uncommon keys") {
             JsonPath.parse("""{"":4}""")!!.read<Int>("$['']") shouldBe 4
             JsonPath.parse("""{"":4}""")!!.read<Int>("$[\"\"]") shouldBe 4
+            JsonPath.parse("""{"'":4}""")!!.read<Int>("$[\"'\"]") shouldBe 4
+            JsonPath.parse("""{"'":4}""")!!.read<Int>("$['\\'']") shouldBe 4
+            JsonPath.parse("""{"\"": 4}""")!!.read<Int>("""$["\""]""") shouldBe 4
+            JsonPath.parse("""{"\"": 4}""")!!.read<Int>("""$['"']""") shouldBe 4
+            JsonPath.parse("""{"\\": 4}""")!!.read<Int>("""$['\\']""") shouldBe 4
         }
 
         it("should read object keys that have numbers and/or symbols") {
@@ -222,6 +227,14 @@ class JsonPathTest : DescribeSpec({
 
         it("should return null if used on JSON object") {
             JsonPath.parse("""{"key":3}""")!!.read<Any>("$[3]") shouldBe null
+        }
+
+        it("should return null if used on a scalar") {
+            JsonPath.parse("5")!!.read<Any>("$[0]") shouldBe null
+            JsonPath.parse("5.34")!!.read<Any>("$[0]") shouldBe null
+            JsonPath.parse("true")!!.read<Any>("$[0]") shouldBe null
+            JsonPath.parse("false")!!.read<Any>("$[0]") shouldBe null
+            JsonPath.parse(""""hello"""")!!.read<Any>("$[0]") shouldBe null
         }
 
         describe("Multi array accessors") {
