@@ -47,7 +47,7 @@ class PathCompilerTest : StringSpec({
         assertEquals(listOf(WildcardToken(), DeepScanArrayAccessorToken(listOf(1,2,3))), f("$.*..[1:4]"))
     }
 
-    "findMatchingClosingBracket" {
+    "should find matching closing bracket" {
         val start = 0
         val f = PathCompiler::findMatchingClosingBracket
 
@@ -94,6 +94,7 @@ class PathCompilerTest : StringSpec({
         assertEquals(MultiObjectAccessorToken(listOf("name", "age", "4")), f(findClosingIndex("$['name','age',4]"), start, end))
         assertEquals(ObjectAccessorToken("name:age"), f(findClosingIndex("$['name:age']"), start, end))
         assertEquals(WildcardToken(), f(findClosingIndex("$[*]"), start, end))
+        assertEquals(ObjectAccessorToken(""":@."$,*'\"""), f(findClosingIndex("""$[':@."$,*\'\\']"""), start, end))
 
         // handle negative values in array ranges
         assertEquals(ArrayLengthBasedRangeAccessorToken(0,null, -1), f(findClosingIndex("$[:-1]"), start, end))
@@ -134,5 +135,7 @@ class PathCompilerTest : StringSpec({
         assertThrows<IllegalArgumentException> { PathCompiler.findMatchingClosingBracket("$['4\\", 1) }
         assertThrows<IllegalArgumentException> { compile("$[-'0']") } // cant use both negative and object accessor
         assertThrows<IllegalArgumentException> { compile("$-[]") }
+        assertThrows<IllegalArgumentException> { compile("$['single'quote']") }
+        assertThrows<IllegalArgumentException> { compile("$[*,1]") }
     }
 })

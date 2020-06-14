@@ -114,7 +114,7 @@ internal object PathCompiler {
                 c == '\'' -> expectingClosingQuote = !expectingClosingQuote
                 c == ']' && !expectingClosingQuote -> return i
                 c == '\\' && expectingClosingQuote -> {
-                    if (next == '\'') {
+                    if (next == '\'' || next == '\\') {
                         ++i // skip this char so we don't process escaped quote
                     } else if (next == null) {
                         throw IllegalArgumentException("Unexpected char at end of path")
@@ -211,6 +211,16 @@ internal object PathCompiler {
                     }
                 }
 
+                c == '\\' && isQuoteOpened -> {
+                    val nextChar = path[i+1]
+                    when (nextChar) {
+                        '\\', '\'' -> {
+                            keyBuilder.append(nextChar)
+                            ++i
+                        }
+                    }
+                }
+
                 c == '\'' && isQuoteOpened -> { // only valid inside array bracket and ending
                     if (keyBuilder.isEmpty()) {
                         throw IllegalArgumentException("Key is empty string")
@@ -225,7 +235,6 @@ internal object PathCompiler {
                 }
 
                 c == '*' && !isQuoteOpened && isBracketBefore() && isBracketNext() -> {
-                    println("foudn wildcard")
                     isWildcard = true
                 }
 
