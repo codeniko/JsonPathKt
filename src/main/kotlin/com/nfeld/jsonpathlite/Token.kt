@@ -266,6 +266,26 @@ internal data class DeepScanLengthBasedArrayAccessorToken(val startIndex: Int,
     }
 }
 
+/**
+ * Returns all values from an Object, or the same list
+ */
+internal class WildcardToken : Token {
+    override fun read(json: Any): Any? {
+        return when (json) {
+            is ObjectNode -> {
+                val result = JacksonUtil.mapper.createArrayNode()
+                json.forEach { result.add(it) }
+                result
+            }
+            else -> json
+        }
+    }
+
+    override fun toString(): String = "WildcardToken"
+    override fun hashCode(): Int = toString().hashCode()
+    override fun equals(other: Any?): Boolean = other is WildcardToken
+}
+
 interface Token {
     /**
      * Takes in ObjectNode/ArrayNode and outputs next ObjectNode/ArrayNode or value by evaluating token against current object/array in path

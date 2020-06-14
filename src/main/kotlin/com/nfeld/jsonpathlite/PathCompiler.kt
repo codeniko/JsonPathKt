@@ -1,5 +1,7 @@
 package com.nfeld.jsonpathlite
 
+import java.lang.IllegalStateException
+
 internal object PathCompiler {
 
     /**
@@ -14,19 +16,21 @@ internal object PathCompiler {
 
         val tokens = mutableListOf<Token>()
         var isDeepScan = false
+        var isWildcard = false
         val keyBuilder = StringBuilder()
 
         fun resetForNextToken() {
             isDeepScan = false
+            isWildcard = false
             keyBuilder.clear()
         }
 
         fun addObjectAccessorToken() {
             val key = keyBuilder.toString()
-            if (isDeepScan) {
-                tokens.add(DeepScanObjectAccessorToken(listOf(key)))
-            } else {
-                tokens.add(ObjectAccessorToken(key))
+            when {
+                isDeepScan -> tokens.add(DeepScanObjectAccessorToken(listOf(key)))
+                isWildcard -> tokens.add(WildcardToken())
+                else -> tokens.add(ObjectAccessorToken(key))
             }
         }
 
@@ -37,20 +41,25 @@ internal object PathCompiler {
             val next = path.getOrNull(i + 1)
             when {
                 c == '.' -> {
-                    if (keyBuilder.isNotEmpty()) {
+                    if (keyBuilder.isNotEmpty() || isWildcard) {
                         addObjectAccessorToken()
                         resetForNextToken()
                     }
                     // check if it's followed by another dot. This means the following key will be used in deep scan
-                    if (next == '.') {
-                        isDeepScan = true
-                        ++i
-                    } else if (next == null) {
-                        throw IllegalArgumentException("Unexpected ending with dot")
+                    when (next) {
+                        '.' -> {
+                            isDeepScan = true
+                            ++i
+                        }
+                        '*' -> {
+                            isWildcard = true
+                            ++i
+                        }
+                        null -> throw IllegalArgumentException("Unexpected ending with dot")
                     }
                 }
                 c == '[' -> {
-                    if (keyBuilder.isNotEmpty()) {
+                    if (keyBuilder.isNotEmpty() || isWildcard) {
                         addObjectAccessorToken()
                         resetForNextToken()
                     }
@@ -81,7 +90,7 @@ internal object PathCompiler {
             ++i
         }
 
-        if (keyBuilder.isNotEmpty()) {
+        if (keyBuilder.isNotEmpty() || isWildcard) {
             addObjectAccessorToken()
         }
 
@@ -127,14 +136,18 @@ internal object PathCompiler {
      * @return Compiled [Token]
      */
     internal fun compileBracket(path: String, openingIndex: Int, closingIndex: Int): Token {
-        var isObjectAccessor = false
+        // isObjectAccessor is separate from expectingClosingQuote because the second you open a quote, it's always an object,
+        // but we we can have multiple keys and thus multiple quotes opened for that object.
+        var isObjectAccessor = false // once this is set, it cant be anything else
         var isNegativeArrayAccessor = false // supplements isArrayAccessor
-        var expectingClosingQuote = false
+        var isQuoteOpened = false // means we found an opening quote, so we expect a closing one to be valid
         var hasStartColon = false // found colon in beginning
         var hasEndColon = false // found colon in end
         var isRange = false // has starting and ending range. There will be two keys containing indices of each
+        var isWildcard = false
 
         var i = openingIndex + 1
+        var lastChar: Char = path[openingIndex]
         val keys = mutableListOf<String>()
         val keyBuilder = StringBuilder()
 
@@ -147,23 +160,37 @@ internal object PathCompiler {
             keys.add(key)
             keyBuilder.clear()
         }
+        fun getNextCharIgnoringWhitespace(): Char {
+            for (n in (i+1)..closingIndex) {
+                val c = path[n]
+                if (c == ' ' && !isQuoteOpened) {
+                    continue
+                }
+                return c
+            }
+            throw IllegalStateException("")
+        }
+        fun isBracketNext() = getNextCharIgnoringWhitespace() == ']'
+        fun isBracketBefore() = lastChar == '['
 
         //TODO handle escaped chars
         while (i < closingIndex) {
             val c = path[i]
+            var setLastChar = true
 
             when {
-                c == ' ' && !expectingClosingQuote -> {
+                c == ' ' && !isQuoteOpened -> {
                     // skip empty space that's not enclosed in quotes
+                    setLastChar = false
                 }
 
-                c == ':' && !expectingClosingQuote -> {
-                    if (openingIndex == i - 1 && closingIndex == i + 1) {
+                c == ':' && !isQuoteOpened -> {
+                    if (isBracketBefore() && isBracketNext()) {
                         hasStartColon = true
                         hasEndColon = true
-                    } else if (openingIndex == i - 1) {
+                    } else if (isBracketBefore()) {
                         hasStartColon = true
-                    } else if (i == closingIndex - 1) {
+                    } else if (isBracketNext()) {
                         hasEndColon = true
                         // keybuilder should have a key...
                         buildAndAddKey()
@@ -177,24 +204,29 @@ internal object PathCompiler {
                     isNegativeArrayAccessor = true
                 }
 
-                c == ',' && !expectingClosingQuote -> {
+                c == ',' && !isQuoteOpened -> {
                     // object accessor would have added key on closing quote
                     if (!isObjectAccessor && keyBuilder.isNotEmpty()) {
                         buildAndAddKey()
                     }
                 }
 
-                c == '\'' && expectingClosingQuote -> { // only valid inside array bracket and ending
+                c == '\'' && isQuoteOpened -> { // only valid inside array bracket and ending
                     if (keyBuilder.isEmpty()) {
                         throw IllegalArgumentException("Key is empty string")
                     }
                     buildAndAddKey()
-                    expectingClosingQuote = false
+                    isQuoteOpened = false
                 }
 
-                c == '\'' -> {
-                    expectingClosingQuote = true
+                c == '\'' && !isNegativeArrayAccessor -> {
+                    isQuoteOpened = true
                     isObjectAccessor = true
+                }
+
+                c == '*' && !isQuoteOpened && isBracketBefore() && isBracketNext() -> {
+                    println("foudn wildcard")
+                    isWildcard = true
                 }
 
                 c.isDigit() || isObjectAccessor -> keyBuilder.append(c)
@@ -202,28 +234,31 @@ internal object PathCompiler {
             }
 
             ++i
+            if (setLastChar) {
+                lastChar = c
+            }
         }
 
         if (keyBuilder.isNotEmpty()) {
             buildAndAddKey()
         }
 
-        var token: Token? = null
-        if (isObjectAccessor) {
+        val token: Token? = if (isObjectAccessor) {
             if (keys.size > 1) {
-                token = MultiObjectAccessorToken(keys)
+                MultiObjectAccessorToken(keys)
             } else {
                 keys.firstOrNull()?.let {
-                    token = ObjectAccessorToken(it)
+                    ObjectAccessorToken(it)
                 }
             }
         } else {
             when {
+                isWildcard -> WildcardToken()
                 isRange -> {
                     val start = keys[0].toInt(10)
                     val end = keys[1].toInt(10) // exclusive
                     val isEndNegative = end < 0
-                    token = if (start < 0 || isEndNegative) {
+                    if (start < 0 || isEndNegative) {
                         val offsetFromEnd = if (isEndNegative) end else 0
                         val endIndex = if (!isEndNegative) end else null
                         ArrayLengthBasedRangeAccessorToken(start, endIndex, offsetFromEnd)
@@ -233,11 +268,11 @@ internal object PathCompiler {
                 }
                 hasStartColon && hasEndColon -> {
                     // take entire list from beginning to end
-                    token = ArrayLengthBasedRangeAccessorToken(0, null, 0)
+                    ArrayLengthBasedRangeAccessorToken(0, null, 0)
                 }
                 hasStartColon -> {
                     val end = keys[0].toInt(10) // exclusive
-                    token = if (end < 0) {
+                    if (end < 0) {
                         // take all from beginning to last minus $end
                         ArrayLengthBasedRangeAccessorToken(0, null, end)
                     } else {
@@ -247,10 +282,11 @@ internal object PathCompiler {
                 }
                 hasEndColon -> {
                     val start = keys[0].toInt(10)
-                    token = ArrayLengthBasedRangeAccessorToken(start)
+                    ArrayLengthBasedRangeAccessorToken(start)
                 }
-                keys.size == 1 -> token = ArrayAccessorToken(keys[0].toInt(10))
-                keys.size > 1 -> token = MultiArrayAccessorToken(keys.map { it.toInt(10) })
+                keys.size == 1 -> ArrayAccessorToken(keys[0].toInt(10))
+                keys.size > 1 -> MultiArrayAccessorToken(keys.map { it.toInt(10) })
+                else -> null
             }
         }
 

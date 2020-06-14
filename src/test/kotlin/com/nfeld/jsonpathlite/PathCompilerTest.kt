@@ -8,7 +8,6 @@ import org.junit.jupiter.api.assertThrows
 class PathCompilerTest : StringSpec({
 
     beforeTest {
-        println("Disabling cache")
         CacheProvider.setCache(null)
     }
 
@@ -38,6 +37,14 @@ class PathCompilerTest : StringSpec({
         assertEquals(listOf(DeepScanLengthBasedArrayAccessorToken(0, null, -2)), f("$..[0:-2]"))
         assertEquals(listOf(DeepScanLengthBasedArrayAccessorToken(-5, 6, 0)), f("$..[-5:6]"))
         assertEquals(listOf(DeepScanLengthBasedArrayAccessorToken(-5, null, -2)), f("$..[-5:-2]"))
+        assertEquals(listOf(ObjectAccessorToken("-")), f("$-"))
+        assertEquals(listOf(ObjectAccessorToken("-0")), f("$-0"))
+        assertEquals(listOf(ObjectAccessorToken("-"), ArrayAccessorToken(0)), f("$-[0]"))
+        assertEquals(listOf(WildcardToken()), f("$.*"))
+        assertEquals(listOf(WildcardToken(), ObjectAccessorToken("key")), f("$.*.key"))
+        assertEquals(listOf(WildcardToken(), ArrayAccessorToken(3)), f("$.*[3]"))
+        assertEquals(listOf(WildcardToken(), DeepScanObjectAccessorToken(listOf("key"))), f("$.*..key"))
+        assertEquals(listOf(WildcardToken(), DeepScanArrayAccessorToken(listOf(1,2,3))), f("$.*..[1:4]"))
     }
 
     "findMatchingClosingBracket" {
@@ -59,6 +66,7 @@ class PathCompilerTest : StringSpec({
         assertEquals(7, f("['a\\'b']", start))
         assertEquals(9, f("['a\\'\\']']", start))
         assertEquals(6, f("['4\\a']", start))
+        assertEquals(2, f("[*]", start))
     }
 
     "compileBracket" {
@@ -85,6 +93,7 @@ class PathCompilerTest : StringSpec({
         assertEquals(MultiObjectAccessorToken(listOf("name", "age")), f(findClosingIndex("$['name','age']"), start, end))
         assertEquals(MultiObjectAccessorToken(listOf("name", "age", "4")), f(findClosingIndex("$['name','age',4]"), start, end))
         assertEquals(ObjectAccessorToken("name:age"), f(findClosingIndex("$['name:age']"), start, end))
+        assertEquals(WildcardToken(), f(findClosingIndex("$[*]"), start, end))
 
         // handle negative values in array ranges
         assertEquals(ArrayLengthBasedRangeAccessorToken(0,null, -1), f(findClosingIndex("$[:-1]"), start, end))
@@ -98,7 +107,12 @@ class PathCompilerTest : StringSpec({
         // ignore space paddings
         assertEquals(ArrayAccessorToken(0), f(findClosingIndex("$[  0  ]"), start, end))
         assertEquals(MultiArrayAccessorToken(listOf(0,3)), f(findClosingIndex("$[0,  3]"), start, end))
-        assertEquals(ObjectAccessorToken("name"), f(findClosingIndex("$['name']"), start, end))
+        assertEquals(ArrayLengthBasedRangeAccessorToken(0, null, 0), f(findClosingIndex("$[ : ]"), start, end))
+        assertEquals(ArrayLengthBasedRangeAccessorToken(2, null, 0), f(findClosingIndex("$[ 2 : ]"), start, end))
+        assertEquals(MultiArrayAccessorToken(listOf(0,1)), f(findClosingIndex("$[  : 2 ]"), start, end))
+        assertEquals(MultiArrayAccessorToken(listOf(1,2)), f(findClosingIndex("$[ 1 : 3 ]"), start, end))
+        assertEquals(WildcardToken(), f(findClosingIndex("$[ *  ]"), start, end))
+        assertEquals(ObjectAccessorToken("name"), f(findClosingIndex("$[  'name'  ]"), start, end))
     }
 
     "should throw" {
@@ -111,9 +125,14 @@ class PathCompilerTest : StringSpec({
         assertThrows<IllegalArgumentException> { compile("$['']") } // needs value in quotes
         assertThrows<IllegalArgumentException> { compile("$[") } // needs closing bracket
         assertThrows<IllegalArgumentException> { compile("$[[]") } // invalid char at end
+        assertThrows<IllegalArgumentException> { compile("$[[]]") }
+        assertThrows<IllegalArgumentException> { compile("$[[0]]") }
+        assertThrows<IllegalArgumentException> { compile("$[0[0]]") }
         assertThrows<IllegalArgumentException> { compileBracket("$[]", 1, 2) } // no token returned
         assertThrows<IllegalArgumentException> { compile("$.") } // needs closing bracket
         assertThrows<IllegalArgumentException> { compile("$['\\") } // unexpected escape char
         assertThrows<IllegalArgumentException> { PathCompiler.findMatchingClosingBracket("$['4\\", 1) }
+        assertThrows<IllegalArgumentException> { compile("$[-'0']") } // cant use both negative and object accessor
+        assertThrows<IllegalArgumentException> { compile("$-[]") }
     }
 })

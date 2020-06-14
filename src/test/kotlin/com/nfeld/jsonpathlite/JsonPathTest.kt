@@ -13,7 +13,6 @@ data class PojoClass3(val key: Map<String, Int>, val default: Int)
 
 class JsonPathTest : DescribeSpec({
     beforeTest() {
-        println("Disabling cache")
         CacheProvider.setCache(null)
     }
 
@@ -76,10 +75,7 @@ class JsonPathTest : DescribeSpec({
 
         it("should preserve order") {
             JsonPath.parse(BOOKS_JSON)!!.read<List<Double>>("$.store..price") shouldBe listOf(8.95, 12.99, 8.99, 22.99, 19.95)
-            //        val json = """{"d": 4, "f": 6, "e": 5, "a": 1, "b": 2, "c": 3}"""
-//        val jacksonResult = JacksonUtil.mapper.readTree(json).read<List<Int>>("$.*")
-//        val jsonOrgResult = JSONObject(json).read<List<Int>>("$.*")
-//        assertNotEquals(jacksonResult.toString(), jsonOrgResult.toString())
+            JsonPath.parse("""{"d": 4, "f": 6, "e": 5, "a": 1, "b": 2, "c": 3}""")!!.read<List<Int>>("$.*") shouldBe listOf(4,6,5,1,2,3)
         }
     }
 
@@ -152,7 +148,6 @@ class JsonPathTest : DescribeSpec({
 
         it("should be null if reading null value") {
             JsonPath.parse("""{"key":null}""")!!.read<Int>("$['key']") shouldBe null
-
         }
 
         it("should read object keys that have numbers and/or symbols") {
@@ -181,6 +176,10 @@ class JsonPathTest : DescribeSpec({
             JsonPath.parse(json)!!.read<String>("$.abc{}3d") shouldBe "f"
             JsonPath.parse(json)!!.read<String>("$['abc{}3d']") shouldBe "f"
             JsonPath.parse(json)!!.read<String>("$['$key']") shouldBe "g"
+        }
+
+        it("should be null on unsupported selectors on objects") {
+            JsonPath.parse(SMALL_JSON)!!.read<Int>("$[:]") shouldBe null
         }
 
         describe("Multi object accessors") {
@@ -387,6 +386,31 @@ class JsonPathTest : DescribeSpec({
 
         it("should scan to get all items after the first of all sublists even if end out of range") {
             JsonPath.parse(LARGE_JSON)!!.read<ArrayNode>("$[2]..[1:100]").toString() shouldBe """["elit","ipsum","pariatur","ullamco","ut","sint",{"name":"Maryanne Wiggins","other":{"a":{"b":{"c":"yo"}}}},{"id":2,"name":"Marylou Caldwell","other":{"a":{"b":{"c":"yo"}}}}]"""
+        }
+    }
+
+    describe("Wildcard") {
+        it("should get the values of the JSON object") {
+            JsonPath.parse(LARGE_JSON)!!.read<ArrayNode>("$..friends[-1].*").toString() shouldBe """[{"id":0,"name":"Lora Cotton","other":{"a":{"b":{"c":"yo"}}}},{"id":1,"name":"Gaines Henry","other":{"a":{"b":{"c":"yo"}}}},{"id":2,"name":"Dorothea Irwin","other":{"a":{"b":{"c":"yo"}}}}]"""
+            JsonPath.parse(LARGE_JSON)!!.read<ArrayNode>("$..friends[-1][*]").toString() shouldBe """[{"id":0,"name":"Lora Cotton","other":{"a":{"b":{"c":"yo"}}}},{"id":1,"name":"Gaines Henry","other":{"a":{"b":{"c":"yo"}}}},{"id":2,"name":"Dorothea Irwin","other":{"a":{"b":{"c":"yo"}}}}]"""
+        }
+
+        it("should return same list at end of path") {
+            JsonPath.parse(LARGE_JSON)!!.read<ArrayNode>("$..friends..name[1:3].*").toString() shouldBe """["Vonda Howe","Harrell Pratt"]"""
+            JsonPath.parse(LARGE_JSON)!!.read<ArrayNode>("$..friends..name[1:3][*]").toString() shouldBe """["Vonda Howe","Harrell Pratt"]"""
+        }
+
+        it("should return null if null read before wildcard") {
+            JsonPath.parse("{}")!!.read<Any>("$.key.*") shouldBe null
+            JsonPath.parse("{}")!!.read<Any>("$.key[*]") shouldBe null
+        }
+
+        it("should return self if used on scalar") {
+            JsonPath.parse("5")!!.read<Int>("$.*") shouldBe 5
+            JsonPath.parse("5.34")!!.read<Double>("$.*") shouldBe 5.34
+            JsonPath.parse("true")!!.read<Boolean>("$.*") shouldBe true
+            JsonPath.parse("false")!!.read<Boolean>("$.*") shouldBe false
+            JsonPath.parse(""""hello"""")!!.read<String>("$.*") shouldBe "hello"
         }
     }
 })

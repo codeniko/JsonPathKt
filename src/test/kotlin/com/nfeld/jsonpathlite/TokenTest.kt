@@ -5,6 +5,7 @@ import com.nfeld.jsonpathlite.cache.CacheProvider
 import com.nfeld.jsonpathlite.util.createArrayNode
 import com.nfeld.jsonpathlite.util.createObjectNode
 import io.kotest.core.spec.style.StringSpec
+import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 
@@ -14,7 +15,6 @@ private fun printTesting(subpath: String) {
 
 class TokenTest : StringSpec({
     beforeTest() {
-        println("Disabling cache")
         CacheProvider.setCache(null)
     }
 
@@ -135,5 +135,14 @@ class TokenTest : StringSpec({
 
     "MultiObjectAccessorToken" {
         assertNull(MultiObjectAccessorToken(listOf()).read(createArrayNode()))
+    }
+
+    "WildcardToken" {
+        WildcardToken().read(createArrayNode()).toString() shouldBe """[]"""
+        WildcardToken().read(createObjectNode()).toString() shouldBe """[]"""
+        val arrayNode = readTree("""["string", 42, { "key": "value" }, [0, 1] ]""")
+        val objectNode = readTree("""{ "some": "string", "int": 42, "object": { "key": "value" }, "array": [0, 1] }""")
+        WildcardToken().read(arrayNode).toString() shouldBe """["string",42,{"key":"value"},[0,1]]"""
+        WildcardToken().read(objectNode).toString() shouldBe """["string",42,{"key":"value"},[0,1]]"""
     }
 })
