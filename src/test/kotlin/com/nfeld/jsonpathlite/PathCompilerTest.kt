@@ -47,6 +47,21 @@ class PathCompilerTest : StringSpec({
         assertEquals(listOf(WildcardToken(), DeepScanArrayAccessorToken(listOf(1,2,3))), f("$.*..[1:4]"))
     }
 
+    "should compile without root $ token" {
+        val f = PathCompiler::compile
+
+        assertEquals(listOf(ObjectAccessorToken("key")), f("key"))
+        assertEquals(listOf(ObjectAccessorToken("key")), f("['key']"))
+        assertEquals(listOf(ObjectAccessorToken("*")), f("*"))
+        assertEquals(listOf(ObjectAccessorToken("key"), ArrayAccessorToken(4)), f("key[4]"))
+        assertEquals(listOf(MultiObjectAccessorToken(listOf("a","b"))), f("['a','b']"))
+        assertEquals(listOf(ArrayAccessorToken(3)), f("[3]"))
+        assertEquals(listOf(MultiArrayAccessorToken(listOf(3,4))), f("[3,4]"))
+        assertEquals(listOf(MultiArrayAccessorToken(listOf(0,1,2))), f("[:3]"))
+        assertEquals(listOf(MultiArrayAccessorToken(listOf(0,1,2))), f("[0:3]"))
+        assertEquals(listOf(ArrayLengthBasedRangeAccessorToken(1, null, 0)), f("[1:]"))
+    }
+
     "should find matching closing bracket" {
         val start = 0
         val f = PathCompiler::findMatchingClosingBracket
@@ -120,8 +135,7 @@ class PathCompilerTest : StringSpec({
         val compile = PathCompiler::compile
         val compileBracket = PathCompiler::compileBracket
 
-        assertThrows<IllegalArgumentException> { compile("[0]") } // needs $
-        assertThrows<IllegalArgumentException> { compile("") } // needs $, cant be empty string
+        assertThrows<IllegalArgumentException> { compile("") } // path cannot be empty
         assertThrows<IllegalArgumentException> { compile("$[]") } // needs value in brackets
         assertThrows<IllegalArgumentException> { compile("$['']") } // needs value in quotes
         assertThrows<IllegalArgumentException> { compile("$[") } // needs closing bracket

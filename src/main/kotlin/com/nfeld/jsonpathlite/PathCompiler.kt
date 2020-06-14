@@ -10,8 +10,8 @@ internal object PathCompiler {
      */
     @Throws(IllegalArgumentException::class)
     internal fun compile(path: String): List<Token> {
-        if (path.firstOrNull() != '$') {
-            throw IllegalArgumentException("First character in path must be '$' root token")
+        if (path.isBlank()) {
+            throw IllegalArgumentException("Path cannot be empty")
         }
 
         val tokens = mutableListOf<Token>()
@@ -35,7 +35,7 @@ internal object PathCompiler {
         }
 
         val len = path.length
-        var i = 1
+        var i = if (path.firstOrNull() == '$') 1 else 0 // $ symbol is optional
         while (i < len) {
             val c = path[i]
             val next = path.getOrNull(i + 1)
