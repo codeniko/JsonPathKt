@@ -75,7 +75,8 @@ internal data class ArrayLengthBasedRangeAccessorToken(val startIndex: Int,
     fun toMultiArrayAccessorToken(json: ArrayNode): MultiArrayAccessorToken? {
         val size = json.size()
         val start = if (startIndex < 0) {
-            size + startIndex
+            val start = size + startIndex
+            if (start < 0) 0 else start // even if we're out of bounds at start, always start from first item
         } else startIndex
 
         // use endIndex if we have it, otherwise calculate from json array length

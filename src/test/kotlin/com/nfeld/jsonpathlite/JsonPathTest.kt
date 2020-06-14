@@ -273,6 +273,10 @@ class JsonPathTest : DescribeSpec({
                 JsonPath.parse(LARGE_JSON)!!.read<List<String>>("$[0]['tags'][5:30]") shouldBe listOf("laboris","qui")
             }
 
+            it("should return range items up from start if start index out of bounds") {
+                JsonPath.parse("""["first", "second", "third"]""")!!.read<List<String>>("$[-4:]") shouldBe listOf("first", "second", "third")
+            }
+
             it("should return empty list if used on JSON object") {
                 JsonPath.parse("""{"key":3}""")!!.read<Any>("$[1:3]")?.toString() shouldBe "[]"
             }
