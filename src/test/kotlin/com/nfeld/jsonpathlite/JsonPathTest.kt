@@ -215,6 +215,10 @@ class JsonPathTest : DescribeSpec({
             JsonPath.parse(SMALL_JSON_ARRAY)!!.read<Int>("$[-0]") shouldBe 1
         }
 
+        it("should return null if used on JSON object") {
+            JsonPath.parse("""{"key":3}""")!!.read<Any>("$[3]") shouldBe null
+        }
+
         describe("Multi array accessors") {
             it("should get first, fourth, and sixth items") {
                 JsonPath.parse(LARGE_JSON)!!.read<List<String>>("$[0]['tags'][0,3,5]") shouldBe listOf("occaecat","labore","laboris")
@@ -222,6 +226,10 @@ class JsonPathTest : DescribeSpec({
 
             it("should get only the items with valid index") {
                 JsonPath.parse(LARGE_JSON)!!.read<List<String>>("$[0]['tags'][0,30,50]") shouldBe listOf("occaecat")
+            }
+
+            it("should return empty list if used on JSON object") {
+                JsonPath.parse("""{"key":3}""")!!.read<Any>("$[3,4]")?.toString() shouldBe "[]"
             }
         }
 
@@ -245,6 +253,10 @@ class JsonPathTest : DescribeSpec({
 
             it("should return range items up to end if end index out of bounds") {
                 JsonPath.parse(LARGE_JSON)!!.read<List<String>>("$[0]['tags'][5:30]") shouldBe listOf("laboris","qui")
+            }
+
+            it("should return empty list if used on JSON object") {
+                JsonPath.parse("""{"key":3}""")!!.read<Any>("$[1:3]")?.toString() shouldBe "[]"
             }
 
             it("should get all items in list") {

@@ -23,7 +23,7 @@ class TokenTest : StringSpec({
     }
 
     "MultiArrayAccessorToken" {
-        assertNull(MultiArrayAccessorToken(listOf(0)).read(createObjectNode()))
+        MultiArrayAccessorToken(listOf(0,1)).read(createObjectNode())?.toString() shouldBe "[]"
 
         val expected = createArrayNode().apply {
             add(1)
@@ -37,7 +37,7 @@ class TokenTest : StringSpec({
     }
 
     "ArrayLengthBasedRangeAccessorToken" {
-        assertNull(ArrayLengthBasedRangeAccessorToken(0).read(createObjectNode()))
+        ArrayLengthBasedRangeAccessorToken(0).read(createObjectNode())?.toString() shouldBe "[]"
         assertEquals(createArrayNode().toString(), ArrayLengthBasedRangeAccessorToken(0, -1, 0).read(createArrayNode()).toString())
     }
 

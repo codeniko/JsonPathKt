@@ -3,7 +3,8 @@ package com.nfeld.jsonpathlite
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.ArrayNode
 import com.fasterxml.jackson.databind.node.ObjectNode
-import com.nfeld.jsonpathlite.util.JacksonUtil
+import com.nfeld.jsonpathlite.util.createArrayNode
+import com.nfeld.jsonpathlite.util.createObjectNode
 
 /**
  * Accesses value at [index] from [ArrayNode]
@@ -34,7 +35,7 @@ internal data class ArrayAccessorToken(val index: Int) : Token {
  */
 internal data class MultiArrayAccessorToken(val indices: List<Int>) : Token {
     override fun read(json: Any): Any? {
-        val result = JacksonUtil.mapper.createArrayNode()
+        val result = createArrayNode()
 
         if (json is ArrayNode) {
             val size = json.size()
@@ -48,9 +49,8 @@ internal data class MultiArrayAccessorToken(val indices: List<Int>) : Token {
                     json.get(index)?.let { result.add(it) }
                 }
             }
-            return result
         }
-        return null
+        return result
     }
 }
 
@@ -69,7 +69,7 @@ internal data class ArrayLengthBasedRangeAccessorToken(val startIndex: Int,
         val token = if (json is ArrayNode) {
              toMultiArrayAccessorToken(json)
         } else null
-        return token?.read(json)
+        return token?.read(json) ?: createArrayNode()
     }
 
     fun toMultiArrayAccessorToken(json: ArrayNode): MultiArrayAccessorToken? {
@@ -112,7 +112,7 @@ internal data class ObjectAccessorToken(val key: String) : Token {
  */
 internal data class MultiObjectAccessorToken(val keys: List<String>) : Token {
     override fun read(json: Any): Any? {
-        val result = JacksonUtil.mapper.createObjectNode()
+        val result = createObjectNode()
 
         return if (json is ObjectNode) {
             keys.forEach { key ->
@@ -136,7 +136,7 @@ internal data class DeepScanObjectAccessorToken(val targetKeys: List<String>) : 
             is ObjectNode -> {
                 // first add all values from keys requested to our result
                 if (targetKeys.size > 1) {
-                    val resultToAdd = JacksonUtil.mapper.createObjectNode()
+                    val resultToAdd = createObjectNode()
                     targetKeys.forEach { targetKey ->
                         jsonValue.get(targetKey)?.let { resultToAdd.replace(targetKey, it) }
                     }
@@ -169,7 +169,7 @@ internal data class DeepScanObjectAccessorToken(val targetKeys: List<String>) : 
     }
 
     override fun read(json: Any): Any? {
-        val result = JacksonUtil.mapper.createArrayNode()
+        val result = createArrayNode()
         scan(json, result)
         return result
     }
@@ -210,7 +210,7 @@ internal data class DeepScanArrayAccessorToken(val indices: List<Int>) : Token {
     }
 
     override fun read(json: Any): Any? {
-        val result = JacksonUtil.mapper.createArrayNode()
+        val result = createArrayNode()
         scan(json, result)
         return result
     }
@@ -260,7 +260,7 @@ internal data class DeepScanLengthBasedArrayAccessorToken(val startIndex: Int,
     }
 
     override fun read(json: Any): Any? {
-        val result = JacksonUtil.mapper.createArrayNode()
+        val result = createArrayNode()
         scan(json, result)
         return result
     }
@@ -273,7 +273,7 @@ internal class WildcardToken : Token {
     override fun read(json: Any): Any? {
         return when (json) {
             is ObjectNode -> {
-                val result = JacksonUtil.mapper.createArrayNode()
+                val result = createArrayNode()
                 json.forEach { result.add(it) }
                 result
             }

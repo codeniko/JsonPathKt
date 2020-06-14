@@ -12,5 +12,5 @@ object JacksonUtil {
     }
 }
 
-internal fun createObjectNode() = JacksonUtil.mapper.createObjectNode()
-internal fun createArrayNode() = JacksonUtil.mapper.createArrayNode()
+internal inline fun createObjectNode() = JacksonUtil.mapper.createObjectNode()
+internal inline fun createArrayNode() = JacksonUtil.mapper.createArrayNode()
