@@ -103,7 +103,8 @@ internal object PathCompiler {
      * @return closing bracket index, or -1 if not found
      */
     internal fun findMatchingClosingBracket(path: String, openingIndex: Int): Int {
-        var expectingClosingQuote = false
+        var isQuoteOpened = false
+        var isSingleQuote = false // either single quote or double quote opened if isQuoteOpened
         var i = openingIndex + 1
         val len = path.length
 
@@ -111,10 +112,24 @@ internal object PathCompiler {
             val c = path[i]
             val next = path.getOrNull(i + 1)
             when {
-                c == '\'' -> expectingClosingQuote = !expectingClosingQuote
-                c == ']' && !expectingClosingQuote -> return i
-                c == '\\' && expectingClosingQuote -> {
-                    if (next == '\'' || next == '\\') {
+                c == '\'' || c == '"' -> {
+                    when {
+                        !isQuoteOpened -> {
+                            isQuoteOpened = !isQuoteOpened
+                            isSingleQuote = c == '\''
+                        }
+                        isSingleQuote && c == '\'' -> {
+                            isQuoteOpened = !isQuoteOpened
+                        }
+                        !isSingleQuote && c == '"' -> {
+                            isQuoteOpened = !isQuoteOpened
+                        }
+                    }
+
+                }
+                c == ']' && !isQuoteOpened -> return i
+                c == '\\' && isQuoteOpened -> {
+                    if (next == '\'' || next == '\\' || next == '"') {
                         ++i // skip this char so we don't process escaped quote
                     } else if (next == null) {
                         throw IllegalArgumentException("Unexpected char at end of path")
@@ -141,6 +156,7 @@ internal object PathCompiler {
         var isObjectAccessor = false // once this is set, it cant be anything else
         var isNegativeArrayAccessor = false // supplements isArrayAccessor
         var isQuoteOpened = false // means we found an opening quote, so we expect a closing one to be valid
+        var isSingleQuote = false // either single quote or double quote opened
         var hasStartColon = false // found colon in beginning
         var hasEndColon = false // found colon in end
         var isRange = false // has starting and ending range. There will be two keys containing indices of each
@@ -214,14 +230,14 @@ internal object PathCompiler {
                 c == '\\' && isQuoteOpened -> {
                     val nextChar = path[i+1]
                     when (nextChar) {
-                        '\\', '\'' -> {
+                        '\\', '\'', '"' -> {
                             keyBuilder.append(nextChar)
                             ++i
                         }
                     }
                 }
 
-                c == '\'' && isQuoteOpened -> { // only valid inside array bracket and ending
+                c == '\'' && isQuoteOpened && isSingleQuote -> { // only valid inside array bracket and ending
                     if (keyBuilder.isEmpty()) {
                         throw IllegalArgumentException("Key is empty string")
                     }
@@ -229,8 +245,17 @@ internal object PathCompiler {
                     isQuoteOpened = false
                 }
 
-                c == '\'' && !isNegativeArrayAccessor -> {
+                c == '"' && isQuoteOpened && !isSingleQuote -> { // only valid inside array bracket and ending
+                    if (keyBuilder.isEmpty()) {
+                        throw IllegalArgumentException("Key is empty string")
+                    }
+                    buildAndAddKey()
+                    isQuoteOpened = false
+                }
+
+                (c == '\'' || c == '"') && !isNegativeArrayAccessor && !isQuoteOpened -> {
                     isQuoteOpened = true
+                    isSingleQuote = c == '\''
                     isObjectAccessor = true
                 }
 

@@ -2,6 +2,7 @@ package com.nfeld.jsonpathlite
 
 import com.nfeld.jsonpathlite.cache.CacheProvider
 import io.kotest.core.spec.style.StringSpec
+import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.assertThrows
 
@@ -45,6 +46,7 @@ class PathCompilerTest : StringSpec({
         assertEquals(listOf(WildcardToken(), ArrayAccessorToken(3)), f("$.*[3]"))
         assertEquals(listOf(WildcardToken(), DeepScanObjectAccessorToken(listOf("key"))), f("$.*..key"))
         assertEquals(listOf(WildcardToken(), DeepScanArrayAccessorToken(listOf(1,2,3))), f("$.*..[1:4]"))
+        f("""$..["key"]""") shouldBe listOf(DeepScanObjectAccessorToken(listOf("key")))
     }
 
     "should compile without root $ token" {
@@ -52,9 +54,11 @@ class PathCompilerTest : StringSpec({
 
         assertEquals(listOf(ObjectAccessorToken("key")), f("key"))
         assertEquals(listOf(ObjectAccessorToken("key")), f("['key']"))
+        assertEquals(listOf(ObjectAccessorToken("key")), f("""["key"]"""))
         assertEquals(listOf(ObjectAccessorToken("*")), f("*"))
         assertEquals(listOf(ObjectAccessorToken("key"), ArrayAccessorToken(4)), f("key[4]"))
         assertEquals(listOf(MultiObjectAccessorToken(listOf("a","b"))), f("['a','b']"))
+        assertEquals(listOf(MultiObjectAccessorToken(listOf("a","b"))), f("""["a","b"]"""))
         assertEquals(listOf(ArrayAccessorToken(3)), f("[3]"))
         assertEquals(listOf(MultiArrayAccessorToken(listOf(3,4))), f("[3,4]"))
         assertEquals(listOf(MultiArrayAccessorToken(listOf(0,1,2))), f("[:3]"))
@@ -81,6 +85,9 @@ class PathCompilerTest : StringSpec({
         assertEquals(7, f("['a\\'b']", start))
         assertEquals(9, f("['a\\'\\']']", start))
         assertEquals(6, f("['4\\a']", start))
+        assertEquals(7, f("""["a\"b"]""", start))
+        assertEquals(9, f("""["a\"\"]"]""", start))
+        assertEquals(6, f("""["4\a"]""", start))
         assertEquals(2, f("[*]", start))
     }
 
@@ -129,6 +136,13 @@ class PathCompilerTest : StringSpec({
         assertEquals(MultiArrayAccessorToken(listOf(1,2)), f(findClosingIndex("$[ 1 : 3 ]"), start, end))
         assertEquals(WildcardToken(), f(findClosingIndex("$[ *  ]"), start, end))
         assertEquals(ObjectAccessorToken("name"), f(findClosingIndex("$[  'name'  ]"), start, end))
+
+        // double quotes should be identical to single quotes
+        f(findClosingIndex("""$["key"]"""), start, end) shouldBe ObjectAccessorToken("key")
+        f(findClosingIndex("""$["'key'"]"""), start, end) shouldBe ObjectAccessorToken("'key'")
+        f(findClosingIndex("""$["ke'y"]"""), start, end) shouldBe ObjectAccessorToken("ke'y")
+        f(findClosingIndex("""$["ke\"y"]"""), start, end) shouldBe ObjectAccessorToken("ke\"y")
+        f(findClosingIndex("""$["key","key2"]"""), start, end) shouldBe MultiObjectAccessorToken(listOf("key", "key2"))
     }
 
     "should throw" {
@@ -151,5 +165,7 @@ class PathCompilerTest : StringSpec({
         assertThrows<IllegalArgumentException> { compile("$-[]") }
         assertThrows<IllegalArgumentException> { compile("$['single'quote']") }
         assertThrows<IllegalArgumentException> { compile("$[*,1]") }
+        assertThrows<IllegalArgumentException> { compile("""$["'key"']""") }
+        assertThrows<IllegalArgumentException> { compile("""$['"key'"]""") }
     }
 })
