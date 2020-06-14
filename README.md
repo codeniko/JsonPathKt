@@ -55,7 +55,6 @@ JsonPathLite is available at the Maven Central repository.
   <groupId>com.nfeld.jsonpathlite</groupId>
   <artifactId>json-path-lite</artifactId>
   <version>2.0.0</version>
-  <type>pom</type>
 </dependency>
 ```
 
