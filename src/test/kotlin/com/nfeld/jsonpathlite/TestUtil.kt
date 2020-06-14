@@ -1,46 +1,37 @@
 package com.nfeld.jsonpathlite
 
-import com.fasterxml.jackson.databind.node.ArrayNode
 import com.nfeld.jsonpathlite.cache.CacheProvider
 import com.nfeld.jsonpathlite.util.JacksonUtil
 
-open class BaseTest {
+fun readTree(json: String) = JacksonUtil.mapper.readTree(json)
 
-    protected val arrayNode: ArrayNode
-    protected fun readTree(json: String) = JacksonUtil.mapper.readTree(json)
-
-    init {
-        arrayNode = readTree(LARGE_JSON) as ArrayNode
+// we need to reset this singleton across test suites
+fun resetCacheProvider() {
+    // use reflection to reset CacheProvider singleton to its initial state
+    CacheProvider.javaClass.getDeclaredField("cache").apply {
+        isAccessible = true
+        set(null, null)
     }
+    CacheProvider.javaClass.getDeclaredField("useDefault").apply {
+        isAccessible = true
+        setBoolean(null, true)
+    }
+}
 
-    companion object {
-        // we need to reset this singleton across test suites
-        fun resetCacheProvider() {
-            // use reflection to reset CacheProvider singleton to its initial state
-            CacheProvider.javaClass.getDeclaredField("cache").apply {
-                isAccessible = true
-                set(null, null)
-            }
-            CacheProvider.javaClass.getDeclaredField("useDefault").apply {
-                isAccessible = true
-                setBoolean(null, true)
-            }
-        }
+fun resetJaywayCacheProvider() {
+    com.jayway.jsonpath.spi.cache.CacheProvider::class.java.getDeclaredField("cache").apply {
+        isAccessible = true
+        set(null, null)
+    }
+    com.jayway.jsonpath.spi.cache.CacheProvider::class.java.getDeclaredField("cachingEnabled").apply {
+        isAccessible = true
+        setBoolean(null, false)
+    }
+}
 
-        fun resetJaywayCacheProvider() {
-            com.jayway.jsonpath.spi.cache.CacheProvider::class.java.getDeclaredField("cache").apply {
-                isAccessible = true
-                set(null, null)
-            }
-            com.jayway.jsonpath.spi.cache.CacheProvider::class.java.getDeclaredField("cachingEnabled").apply {
-                isAccessible = true
-                setBoolean(null, false)
-            }
-        }
-
-        const val SMALL_JSON = "{\"key\": 5}"
-        const val SMALL_JSON_ARRAY = "[1,2,3,4, $SMALL_JSON]"
-        const val LARGE_JSON = """[{
+const val SMALL_JSON = "{\"key\": 5}"
+const val SMALL_JSON_ARRAY = "[1,2,3,4, $SMALL_JSON]"
+const val LARGE_JSON = """[{
                                     "_id": "5c77a899cd278f94d64b996e",
                                     "index": 0,
                                     "guid": "fbb80dca-349c-4b49-8dc1-b01c6684e9b7",
@@ -368,7 +359,7 @@ open class BaseTest {
                                 }
                             ]"""
 
-        const val BOOKS_JSON = """
+const val BOOKS_JSON = """
             {
                 "store": {
                     "book": [
@@ -408,7 +399,7 @@ open class BaseTest {
             }
         """
 
-        const val FAMILY_JSON = """
+const val FAMILY_JSON = """
             {
                 "family": {
                     "children": [{
@@ -432,8 +423,3 @@ open class BaseTest {
                 }
             }
         """
-    }
-
-
-
-}

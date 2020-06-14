@@ -4,98 +4,88 @@ import com.jayway.jsonpath.Configuration
 import com.jayway.jsonpath.spi.cache.NOOPCache
 import com.jayway.jsonpath.spi.json.JacksonJsonProvider
 import com.nfeld.jsonpathlite.cache.CacheProvider
-import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.Test
+import io.kotest.core.spec.style.StringSpec
 
-class BenchmarkTest : BaseTest() {
+private const val DEFAULT_RUNS = 30
+private const val DEFAULT_CALLS_PER_RUN = 80000
+private var printReadmeFormat = false
 
-    companion object {
-        private const val DEFAULT_RUNS = 30
-        private const val DEFAULT_CALLS_PER_RUN = 80000
-        private var printReadmeFormat = false
+private val timestamp: Long
+    get() = System.currentTimeMillis()
 
-        @JvmStatic
-        @BeforeAll
-        fun setupClass() {
-            println("Setting up BenchmarkTest")
+private fun benchmark(callsPerRun: Int = DEFAULT_CALLS_PER_RUN, runs: Int = DEFAULT_RUNS, f: () -> Unit): Long {
+    // warmup
+    f()
 
-            printReadmeFormat = System.getProperty("readmeFormat")?.toBoolean() ?: false
+    val times = mutableListOf<Long>()
+
+    for (i in 0 until runs) {
+        val t1 = timestamp
+        for (k in 0 until callsPerRun) {
+            f()
         }
+        val t2 = timestamp
+        times.add(t2 - t1)
     }
 
+    return times.average().toLong()
+}
 
+private fun benchmarkJsonPathLite(path: String, callsPerRun: Int = DEFAULT_CALLS_PER_RUN, runs: Int = DEFAULT_RUNS): Long {
+    val json = JsonPath.parse(LARGE_JSON)!! // pre-parse json
+    return benchmark(callsPerRun, runs) { JsonPath(path).readFromJson<Any>(json) }
+}
 
-    private val timestamp: Long
-        get() = System.currentTimeMillis()
+private fun benchmarkJsonPath(path: String, callsPerRun: Int = DEFAULT_CALLS_PER_RUN, runs: Int = DEFAULT_RUNS): Long {
+    val jaywayConfig = Configuration.defaultConfiguration().jsonProvider(JacksonJsonProvider())
+    val documentContext = com.jayway.jsonpath.JsonPath.parse(LARGE_JSON, jaywayConfig) // pre-parse json
+    return benchmark(callsPerRun, runs) { documentContext.read<Any>(path) }
+}
 
-    private fun benchmark(callsPerRun: Int = DEFAULT_CALLS_PER_RUN, runs: Int = DEFAULT_RUNS, f: () -> Unit): Long {
-        // warmup
-        f()
+private fun runBenchmarksAndPrintResults(path: String, callsPerRun: Int = DEFAULT_CALLS_PER_RUN, runs: Int = DEFAULT_RUNS) {
+    // reset caches to initial position, default on
+    resetCaches()
 
-        val times = mutableListOf<Long>()
+    // first benchmarks will be using caches
+    val lite = benchmarkJsonPathLite(path, callsPerRun, runs)
+    val other = benchmarkJsonPath(path, callsPerRun, runs)
 
-        for (i in 0 until runs) {
-            val t1 = timestamp
-            for (k in 0 until callsPerRun) {
-                f()
-            }
-            val t2 = timestamp
-            times.add(t2 - t1)
-        }
+    // now disable caches
+    CacheProvider.setCache(null)
+    resetJaywayCacheProvider()
+    com.jayway.jsonpath.spi.cache.CacheProvider.setCache(NOOPCache())
+    val liteNoCache = benchmarkJsonPathLite(path, callsPerRun, runs)
+    val otherNoCache = benchmarkJsonPath(path, callsPerRun, runs)
 
-        return times.average().toLong()
+    if (printReadmeFormat) {
+        println("|  $path  |  $liteNoCache ms *($lite ms w/ cache)* |  $otherNoCache ms *($other ms w/ cache)*  |")
+    } else {
+        println("$path   lite: ${lite}, jsonpath: ${other}     Without caches:  lite: ${liteNoCache}, jsonpath: ${otherNoCache}")
+    }
+}
+
+private fun resetCaches() {
+    resetCacheProvider()
+    resetJaywayCacheProvider()
+}
+
+class BenchmarkTest : StringSpec({
+
+    beforeSpec {
+        println("Setting up BenchmarkTest")
+
+        printReadmeFormat = System.getProperty("readmeFormat")?.toBoolean() ?: false
     }
 
-    private fun benchmarkJsonPathLite(path: String, callsPerRun: Int = DEFAULT_CALLS_PER_RUN, runs: Int = DEFAULT_RUNS): Long {
-        val json = JsonPath.parse(LARGE_JSON)!! // pre-parse json
-        return benchmark(callsPerRun, runs) { JsonPath(path).readFromJson<Any>(json) }
-    }
-
-    private fun benchmarkJsonPath(path: String, callsPerRun: Int = DEFAULT_CALLS_PER_RUN, runs: Int = DEFAULT_RUNS): Long {
-        val jaywayConfig = Configuration.defaultConfiguration().jsonProvider(JacksonJsonProvider())
-        val documentContext = com.jayway.jsonpath.JsonPath.parse(LARGE_JSON, jaywayConfig) // pre-parse json
-        return benchmark(callsPerRun, runs) { documentContext.read<Any>(path) }
-    }
-
-    private fun runBenchmarksAndPrintResults(path: String, callsPerRun: Int = DEFAULT_CALLS_PER_RUN, runs: Int = DEFAULT_RUNS) {
-        // reset caches to initial position, default on
-        resetCaches()
-
-        // first benchmarks will be using caches
-        val lite = benchmarkJsonPathLite(path, callsPerRun, runs)
-        val other = benchmarkJsonPath(path, callsPerRun, runs)
-
-        // now disable caches
-        CacheProvider.setCache(null)
-        resetJaywayCacheProvider()
-        com.jayway.jsonpath.spi.cache.CacheProvider.setCache(NOOPCache())
-        val liteNoCache = benchmarkJsonPathLite(path, callsPerRun, runs)
-        val otherNoCache = benchmarkJsonPath(path, callsPerRun, runs)
-
-        if (printReadmeFormat) {
-            println("|  $path  |  $liteNoCache ms *($lite ms w/ cache)* |  $otherNoCache ms *($other ms w/ cache)*  |")
-        } else {
-            println("$path   lite: ${lite}, jsonpath: ${other}     Without caches:  lite: ${liteNoCache}, jsonpath: ${otherNoCache}")
-        }
-    }
-
-    private fun resetCaches() {
-        resetCacheProvider()
-        resetJaywayCacheProvider()
-    }
-
-    @Test
-    fun benchmarkDeepPath() {
+    "benchmark deep path" {
         runBenchmarksAndPrintResults("$[0].friends[1].other.a.b['c']")
     }
 
-    @Test
-    fun benchmarkShallowPath() {
+    "benchmark shallow path" {
         runBenchmarksAndPrintResults("$[2]._id")
     }
 
-    @Test
-    fun benchmarkPathCompile() {
+    "benchmark compiling path" {
 
         fun compile(path: String) {
             resetCaches()
@@ -129,8 +119,7 @@ class BenchmarkTest : BaseTest() {
         compile("$[0].friends[1]..other[2].a.b['c'][5].niko[2]..hello[0].world[6][9]..['a','b','c'][0].id")
     }
 
-    @Test
-    fun benchmarkDeepScans() {
+    "benchmark deep scans" {
         val callsPerRun = 20000
         val runs = 10
         runBenchmarksAndPrintResults("$..name", callsPerRun, runs)
@@ -138,8 +127,7 @@ class BenchmarkTest : BaseTest() {
         runBenchmarksAndPrintResults("$..[1]", callsPerRun, runs)
     }
 
-    @Test
-    fun benchmarkDeepScanRanges() {
+    "benchmark deep scan ranges" {
         val callsPerRun = 20000
         val runs = 10
         runBenchmarksAndPrintResults("$..[:2]", callsPerRun, runs)
@@ -149,33 +137,27 @@ class BenchmarkTest : BaseTest() {
         // runBenchmarksAndPrintResults("$..[1:-1]", callsPerRun, runs)
     }
 
-    @Test
-    fun benchmarkFromLastArrayAccess() {
+    "benchmark array access from end element" {
         runBenchmarksAndPrintResults("$[0]['tags'][-3]")
     }
 
-    @Test
-    fun benchmarkArrayRangeFromStart() {
+    "benchmark array range from start" {
         runBenchmarksAndPrintResults("$[0]['tags'][:3]")
     }
 
-    @Test
-    fun benchmarkArrayRangeToEnd() {
+    "benchmark array range to end element" {
         runBenchmarksAndPrintResults("$[0]['tags'][3:]")
     }
 
-    @Test
-    fun benchmarkArrayRange() {
+    "benchmark array range" {
         runBenchmarksAndPrintResults("$[0]['tags'][3:5]")
     }
 
-    @Test
-    fun benchmarkMultiArrayAccess() {
+    "benchmark multi array access" {
         runBenchmarksAndPrintResults("$[0]['tags'][0,3,5]")
     }
 
-    @Test
-    fun benchmarkMultiObjectAccess() {
+    "benchmark multi object access" {
         runBenchmarksAndPrintResults("$[0]['latitude','longitude','isActive']")
     }
-}
+})

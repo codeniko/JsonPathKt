@@ -1,25 +1,28 @@
 package com.nfeld.jsonpathlite
 
 import com.fasterxml.jackson.databind.node.ArrayNode
+import com.nfeld.jsonpathlite.cache.CacheProvider
 import com.nfeld.jsonpathlite.util.createArrayNode
 import com.nfeld.jsonpathlite.util.createObjectNode
+import io.kotest.core.spec.style.StringSpec
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
-import org.junit.jupiter.api.Test
 
-class TokenTest : BaseNoCacheTest() {
+private fun printTesting(subpath: String) {
+    println("Testing like $subpath")
+}
 
-    private fun printTesting(subpath: String) {
-        println("Testing like $subpath")
+class TokenTest : StringSpec({
+    beforeTest() {
+        println("Disabling cache")
+        CacheProvider.setCache(null)
     }
 
-    @Test
-    fun arrayAccessorToken() {
+    "ArrayAccessorToken" {
         assertNull(ArrayAccessorToken(0).read(createObjectNode()))
     }
 
-    @Test
-    fun multiArrayAccessorToken() {
+    "MultiArrayAccessorToken" {
         assertNull(MultiArrayAccessorToken(listOf(0)).read(createObjectNode()))
 
         val expected = createArrayNode().apply {
@@ -33,14 +36,12 @@ class TokenTest : BaseNoCacheTest() {
         }).toString())
     }
 
-    @Test
-    fun arrayLengthBasedRangeAccessorToken() {
+    "ArrayLengthBasedRangeAccessorToken" {
         assertNull(ArrayLengthBasedRangeAccessorToken(0).read(createObjectNode()))
         assertEquals(createArrayNode().toString(), ArrayLengthBasedRangeAccessorToken(0, -1, 0).read(createArrayNode()).toString())
     }
 
-    @Test
-    fun arrayLengthBasedAccessorTokenToMultiArrayAccessorToken() {
+    "ArrayLengthBasedAccessorToken to MultiArrayAccessorToken" {
         val json = readTree("[0,1,2,3,4]") as ArrayNode
 
         printTesting("[0:]")
@@ -96,8 +97,7 @@ class TokenTest : BaseNoCacheTest() {
         assertEquals(expected, res)
     }
 
-    @Test
-    fun deepScanLengthBasedArrayAccessorToken() {
+    "DeepScanLengthBasedArrayAccessorToken" {
         val json = readTree("[0,1,2,3,4]") as ArrayNode
 
         printTesting("[0:]")
@@ -129,13 +129,11 @@ class TokenTest : BaseNoCacheTest() {
         assertEquals("[2,3]", res)
     }
 
-    @Test
-    fun objectAccessorToken() {
+    "ObjectAccessorToken" {
         assertNull(ObjectAccessorToken("key").read(createArrayNode()))
     }
 
-    @Test
-    fun multiObjectAccessorToken() {
+    "MultiObjectAccessorToken" {
         assertNull(MultiObjectAccessorToken(listOf()).read(createArrayNode()))
     }
-}
+})

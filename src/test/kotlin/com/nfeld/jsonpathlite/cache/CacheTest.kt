@@ -1,19 +1,17 @@
 package com.nfeld.jsonpathlite.cache
 
-import com.nfeld.jsonpathlite.BaseTest
 import com.nfeld.jsonpathlite.JsonPath
+import com.nfeld.jsonpathlite.resetCacheProvider
+import io.kotest.core.spec.style.StringSpec
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.Test
 
-class CacheTest : BaseTest() {
+private fun getCache(): Cache? = CacheProvider.getCache()
+private fun getLruCache(): LRUCache? = getCache() as? LRUCache
 
-    private fun getCache(): Cache? = CacheProvider.getCache()
-    private fun getLruCache(): LRUCache? = getCache() as? LRUCache
-
-    @Test
-    fun getCacheTest() {
+class CacheTest : StringSpec({
+    "should get from cache" {
         resetCacheProvider()
 
         val path = "$.some.path"
@@ -24,8 +22,7 @@ class CacheTest : BaseTest() {
         assertEquals(jsonPath, getCache()!!.get(path))
     }
 
-    @Test
-    fun putCacheTest() {
+    "should put into cache" {
         resetCacheProvider()
         CacheProvider.maxCacheSize = 2
         assertEquals(2, CacheProvider.maxCacheSize)
@@ -62,4 +59,4 @@ class CacheTest : BaseTest() {
         assertEquals(path1 to compiledPath1, cached[0])
         assertEquals(path3 to compiledPath3, cached[1])
     }
-}
+})

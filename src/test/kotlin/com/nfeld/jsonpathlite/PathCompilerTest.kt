@@ -1,13 +1,18 @@
 package com.nfeld.jsonpathlite
 
+import com.nfeld.jsonpathlite.cache.CacheProvider
+import io.kotest.core.spec.style.StringSpec
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 
-class PathCompilerTest : BaseNoCacheTest() {
+class PathCompilerTest : StringSpec({
 
-    @Test
-    fun compile() {
+    beforeTest {
+        println("Disabling cache")
+        CacheProvider.setCache(null)
+    }
+
+    "compile" {
         val f = PathCompiler::compile
 
         assertEquals(listOf(
@@ -35,8 +40,7 @@ class PathCompilerTest : BaseNoCacheTest() {
         assertEquals(listOf(DeepScanLengthBasedArrayAccessorToken(-5, null, -2)), f("$..[-5:-2]"))
     }
 
-    @Test
-    fun findMatchingClosingBracket() {
+    "findMatchingClosingBracket" {
         val start = 0
         val f = PathCompiler::findMatchingClosingBracket
 
@@ -57,8 +61,7 @@ class PathCompilerTest : BaseNoCacheTest() {
         assertEquals(6, f("['4\\a']", start))
     }
 
-    @Test
-    fun compileBracket() {
+    "compileBracket" {
         val f = PathCompiler::compileBracket
         val start = 1
         var end = 0
@@ -98,8 +101,7 @@ class PathCompilerTest : BaseNoCacheTest() {
         assertEquals(ObjectAccessorToken("name"), f(findClosingIndex("$['name']"), start, end))
     }
 
-    @Test
-    fun shouldThrow() {
+    "should throw" {
         val compile = PathCompiler::compile
         val compileBracket = PathCompiler::compileBracket
 
@@ -114,4 +116,4 @@ class PathCompilerTest : BaseNoCacheTest() {
         assertThrows<IllegalArgumentException> { compile("$['\\") } // unexpected escape char
         assertThrows<IllegalArgumentException> { PathCompiler.findMatchingClosingBracket("$['4\\", 1) }
     }
-}
+})

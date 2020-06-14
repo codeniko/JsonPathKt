@@ -1,7 +1,7 @@
 package com.nfeld.jsonpathlite.cache
 
-import com.nfeld.jsonpathlite.BaseTest
 import com.nfeld.jsonpathlite.JsonPath
+import com.nfeld.jsonpathlite.resetCacheProvider
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeAll
@@ -11,7 +11,7 @@ import org.junit.jupiter.api.TestMethodOrder
 
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation::class)
-class CacheProviderTest: BaseTest() {
+class CacheProviderTest {
 
     companion object {
         @JvmStatic
