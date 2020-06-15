@@ -257,7 +257,7 @@ internal object PathCompiler {
                     isWildcard = true
                 }
 
-                c.isDigit() || isObjectAccessor -> keyBuilder.append(c)
+                (c.isDigit() && !isQuoteOpened) || (isObjectAccessor && isQuoteOpened) -> keyBuilder.append(c)
                 else -> throw IllegalArgumentException("Unexpected char, char=$c, index=$i")
             }
 

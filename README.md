@@ -127,6 +127,7 @@ Given the JSON:
 | $.family..name            |  All names nested within family object  |
 | $.family.children[:3]..age     |  The ages of first three children |
 | $..['name','nickname']    |  Names & nicknames (if any) of all children |
+| $.family.children[0].*    |  Names & age values of first child |
 
 ## Benchmarks
 These are benchmark tests of JsonPathLite against Jayway's JsonPath implementation. Results for each test is the average of 30 runs with 80,000 reads per run. You can run these test locally with `./runBenchmarks.sh`

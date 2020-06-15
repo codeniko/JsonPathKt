@@ -173,5 +173,6 @@ class PathCompilerTest : StringSpec({
         assertThrows<IllegalArgumentException> { compile("$[*,1]") }
         assertThrows<IllegalArgumentException> { compile("""$["'key"']""") }
         assertThrows<IllegalArgumentException> { compile("""$['"key'"]""") }
+        assertThrows<IllegalArgumentException> { compile("""['a'.'b']""") }
     }
 })
