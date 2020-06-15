@@ -1,5 +1,6 @@
 package com.nfeld.jsonpathlite
 
+import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.*
 import com.nfeld.jsonpathlite.cache.CacheProvider
 import com.nfeld.jsonpathlite.extension.read
@@ -192,6 +193,18 @@ class JsonPathTest : DescribeSpec({
             JsonPath.parse(SMALL_JSON)!!.read<Int>("$[:]") shouldBe null
         }
 
+        it("should read key from list if list item is an object") {
+            JsonPath.parse("""[{"key": "ey"}, {"key": "bee"}, {"key": "see"}]""")!!.read<JsonNode>("$.key").toString() shouldBe """["ey","bee","see"]"""
+            JsonPath.parse("""[{"key": "ey"}, {"key": "bee"}, {"key": "see"}]""")!!.read<JsonNode>("$[0,2].key").toString() shouldBe """["ey","see"]"""
+            JsonPath.parse("""
+                {
+                    "one": {"key": "value"},
+                    "two": {"k": "v"},
+                    "three": {"some": "more", "key": "other value"}
+                }
+            """)!!.read<JsonNode>("$['one','three'].*.key").toString() shouldBe """["value","other value"]"""
+        }
+
         describe("Multi object accessors") {
             it("should get all 3 keys") {
                 JsonPath.parse(LARGE_JSON)!!.read<Map<String, Any>>("$[0]['latitude','longitude','isActive']") shouldBe mapOf("latitude" to -85.888651, "longitude" to 38.287152, "isActive" to true)
@@ -199,6 +212,10 @@ class JsonPathTest : DescribeSpec({
 
             it("should get only the key/value pairs when found") {
                 JsonPath.parse(LARGE_JSON)!!.read<Map<String, Double>>("$[0]['latitude','longitude', 'unknownkey']") shouldBe mapOf("latitude" to -85.888651, "longitude" to 38.287152)
+            }
+
+            it("should read keys from list if list item is an object") {
+                JsonPath.parse("""[{"key": "ey", "other": 1}, {"key": "bee"}, {"key": "see", "else": 3}]""")!!.read<JsonNode>("$['key','other']").toString() shouldBe """[{"key":"ey","other":1},{"key":"bee"},{"key":"see"}]"""
             }
         }
     }
@@ -420,6 +437,17 @@ class JsonPathTest : DescribeSpec({
 
         it("should scan to get all items after the first of all sublists even if end out of range") {
             JsonPath.parse(LARGE_JSON)!!.read<ArrayNode>("$[2]..[1:100]").toString() shouldBe """["elit","ipsum","pariatur","ullamco","ut","sint",{"name":"Maryanne Wiggins","other":{"a":{"b":{"c":"yo"}}}},{"id":2,"name":"Marylou Caldwell","other":{"a":{"b":{"c":"yo"}}}}]"""
+        }
+
+        it("should get the key of every 2nd item in all sublists") {
+            val json = """
+                {
+                  "k": [{"key": "some value"}, {"key": 42}],
+                  "kk": [[{"key": 100}, {"key": 200}, {"key": 300}], [{"key": 400}, {"key": 500}, {"key": 600}]],
+                  "key": [0, 1]
+                }
+            """.trimIndent()
+            JsonPath.parse(json)!!.read<JsonNode>("$..[1].key").toString() shouldBe """[42,200,500]"""
         }
     }
 

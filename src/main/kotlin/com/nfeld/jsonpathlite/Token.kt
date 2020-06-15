@@ -98,10 +98,22 @@ internal data class ArrayLengthBasedRangeAccessorToken(val startIndex: Int,
  */
 internal data class ObjectAccessorToken(val key: String) : Token {
     override fun read(json: Any): Any? {
-        return if (json is ObjectNode) {
-            // println("ObjectAccessorToken" + json.get(key))
-            json.get(key)
-        } else null
+        return when (json)  {
+            is ObjectNode -> {
+                // println("ObjectAccessorToken" + json.get(key))
+                json.get(key)
+            }
+            is ArrayNode -> {
+                val result = createArrayNode()
+                json.forEach {
+                    (it as? ObjectNode)?.get(key)?.let {
+                        result.add(it)
+                    }
+                }
+                result
+            }
+            else -> null
+        }
     }
 }
 
@@ -113,16 +125,32 @@ internal data class ObjectAccessorToken(val key: String) : Token {
  */
 internal data class MultiObjectAccessorToken(val keys: List<String>) : Token {
     override fun read(json: Any): Any? {
-        val result = createObjectNode()
 
-        return if (json is ObjectNode) {
-            keys.forEach { key ->
-                json.get(key)?.let {
-                    result.replace(key, it)
-                }
+        return when (json) {
+            is ObjectNode -> {
+                multiKeyRead(json)
             }
-            result
-        } else null
+            is ArrayNode -> {
+                val result = createArrayNode()
+                json.forEach {
+                    if (it is ObjectNode) {
+                        multiKeyRead(it)?.let { result.add(it) }
+                    }
+                }
+                result
+            }
+            else -> null
+        }
+    }
+
+    private inline fun multiKeyRead(node: ObjectNode): ObjectNode? {
+        val result = createObjectNode()
+        keys.forEach { key ->
+            node.get(key)?.let {
+                result.replace(key, it)
+            }
+        }
+        return if (!result.isEmpty) result else null
     }
 }
 

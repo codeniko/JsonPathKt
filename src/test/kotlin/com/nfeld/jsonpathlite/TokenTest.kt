@@ -130,11 +130,13 @@ class TokenTest : StringSpec({
     }
 
     "ObjectAccessorToken" {
-        assertNull(ObjectAccessorToken("key").read(createArrayNode()))
+        // object accessor on an array should consistently return list
+        ObjectAccessorToken("key").read(createArrayNode()).toString() shouldBe "[]"
     }
 
     "MultiObjectAccessorToken" {
-        assertNull(MultiObjectAccessorToken(listOf()).read(createArrayNode()))
+        // object accessor on an array should consistently return list
+        MultiObjectAccessorToken(listOf("a", "b")).read(createArrayNode()).toString() shouldBe "[]"
     }
 
     "WildcardToken" {
