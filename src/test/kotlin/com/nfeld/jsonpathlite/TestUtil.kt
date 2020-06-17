@@ -1,5 +1,7 @@
 package com.nfeld.jsonpathlite
 
+import com.jayway.jsonpath.Configuration
+import com.jayway.jsonpath.spi.json.JacksonJsonProvider
 import com.nfeld.jsonpathlite.cache.CacheProvider
 import com.nfeld.jsonpathlite.util.JacksonUtil
 
@@ -27,6 +29,14 @@ fun resetJaywayCacheProvider() {
         isAccessible = true
         setBoolean(null, false)
     }
+}
+
+fun readFromJayway(json: String, path: String): String {
+    val jaywayConfig = Configuration.defaultConfiguration().jsonProvider(JacksonJsonProvider())
+    val documentContext = com.jayway.jsonpath.JsonPath.parse(json, jaywayConfig)
+    val result = documentContext.read<Any>(path).toString()
+    println("Jayway result for $path: " + result)
+    return result
 }
 
 const val SMALL_JSON = "{\"key\": 5}"

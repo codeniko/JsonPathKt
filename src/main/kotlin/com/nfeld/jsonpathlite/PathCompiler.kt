@@ -189,7 +189,6 @@ internal object PathCompiler {
         fun isBracketNext() = getNextCharIgnoringWhitespace() == ']'
         fun isBracketBefore() = lastChar == '['
 
-        //TODO handle escaped chars
         while (i < closingIndex) {
             val c = path[i]
             var setLastChar = true

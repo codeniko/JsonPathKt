@@ -13,8 +13,6 @@ dependencies {
     testImplementation "io.kotest:kotest-assertions-core-jvm:$kotestVersion" // for kotest core jvm assertions
 }
 
-
-
 compileTestKotlin {
     kotlinOptions.jvmTarget = "1.8"
 }

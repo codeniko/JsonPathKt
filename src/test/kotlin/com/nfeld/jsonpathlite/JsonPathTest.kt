@@ -194,7 +194,8 @@ class JsonPathTest : DescribeSpec({
         }
 
         it("should read key from list if list item is an object") {
-            JsonPath.parse("""[{"key": "ey"}, {"key": "bee"}, {"key": "see"}]""")!!.read<JsonNode>("$.key").toString() shouldBe """["ey","bee","see"]"""
+            JsonPath.parse("""[{"key": "ey"}, {"key": "bee"}, {"key": "see"}]""")!!.read<JsonNode>("$.key") shouldBe null
+            JsonPath.parse("""[{"key": "ey"}, {"key": "bee"}, {"key": "see"}]""")!!.read<JsonNode>("$.*.key").toString() shouldBe """["ey","bee","see"]"""
             JsonPath.parse("""[{"key": "ey"}, {"key": "bee"}, {"key": "see"}]""")!!.read<JsonNode>("$[0,2].key").toString() shouldBe """["ey","see"]"""
             JsonPath.parse("""
                 {
@@ -202,20 +203,33 @@ class JsonPathTest : DescribeSpec({
                     "two": {"k": "v"},
                     "three": {"some": "more", "key": "other value"}
                 }
-            """)!!.read<JsonNode>("$['one','three'].*.key").toString() shouldBe """["value","other value"]"""
+            """)!!.read<JsonNode>("$['one','three'].key").toString() shouldBe """["value","other value"]"""
+
+            JsonPath.parse("""[{"a": 1},{"a": 1}]""")!!.read<JsonNode>("$[*].a").toString() shouldBe """[1,1]"""
+            JsonPath.parse("""[{"a": 1},{"a": 1}]""")!!.read<JsonNode>("$.*.a").toString() shouldBe """[1,1]"""
         }
 
         describe("Multi object accessors") {
+            it("should get list of scalars") {
+                JsonPath.parse("""{"key": "value", "another": "entry"}""")!!.read<List<String>>("$['key','another']") shouldBe listOf("value", "entry")
+            }
+
+            it("should return empty list of reading from a list that's not root list") {
+                JsonPath.parse("""[{"key": "value", "another": "entry"}]""")!!.read<Any>("$['key','another']").toString() shouldBe "[]"
+                JsonPath.parse("""[{"key": "ey", "other": 1}, {"key": "bee"}, {"key": "see", "else": 3}]""")!!.read<JsonNode>("$['key','other']").toString() shouldBe "[]"
+            }
+
+            it("should read obj keys from root list") {
+                JsonPath.parse("""[{"key": "value", "another": "entry"}]""")!!.read<List<String>>("$.*['key','another']") shouldBe listOf("value", "entry")
+                JsonPath.parse("""[{"key": "ey", "other": 1}, {"key": "bee"}, {"key": "see", "else": 3}]""")!!.read<JsonNode>("$.*['key','other']").toString() shouldBe """["ey",1,"bee","see"]"""
+            }
+
             it("should get all 3 keys") {
-                JsonPath.parse(LARGE_JSON)!!.read<Map<String, Any>>("$[0]['latitude','longitude','isActive']") shouldBe mapOf("latitude" to -85.888651, "longitude" to 38.287152, "isActive" to true)
+                JsonPath.parse(LARGE_JSON)!!.read<List<Any>>("$[0]['latitude','longitude','isActive']") shouldBe listOf(-85.888651, 38.287152, true)
             }
 
             it("should get only the key/value pairs when found") {
-                JsonPath.parse(LARGE_JSON)!!.read<Map<String, Double>>("$[0]['latitude','longitude', 'unknownkey']") shouldBe mapOf("latitude" to -85.888651, "longitude" to 38.287152)
-            }
-
-            it("should read keys from list if list item is an object") {
-                JsonPath.parse("""[{"key": "ey", "other": 1}, {"key": "bee"}, {"key": "see", "else": 3}]""")!!.read<JsonNode>("$['key','other']").toString() shouldBe """[{"key":"ey","other":1},{"key":"bee"},{"key":"see"}]"""
+                JsonPath.parse(LARGE_JSON)!!.read<List<Double>>("$[0]['latitude','longitude', 'unknownkey']") shouldBe listOf( -85.888651, 38.287152)
             }
         }
     }
@@ -246,12 +260,15 @@ class JsonPathTest : DescribeSpec({
             JsonPath.parse("""{"key":3}""")!!.read<Any>("$[3]") shouldBe null
         }
 
-        it("should return null if used on a scalar") {
+        it("should return null if used on a scalar other than String") {
             JsonPath.parse("5")!!.read<Any>("$[0]") shouldBe null
             JsonPath.parse("5.34")!!.read<Any>("$[0]") shouldBe null
             JsonPath.parse("true")!!.read<Any>("$[0]") shouldBe null
             JsonPath.parse("false")!!.read<Any>("$[0]") shouldBe null
-            JsonPath.parse(""""hello"""")!!.read<Any>("$[0]") shouldBe null
+        }
+
+        it("should get character at index if String scalar") {
+            JsonPath.parse(""""hello"""")!!.read<String>("$[0]") shouldBe "h"
         }
 
         describe("Multi array accessors") {
@@ -374,8 +391,8 @@ class JsonPathTest : DescribeSpec({
 
         it("should get ArrayNode") {
             val expected = """[["occaecat","mollit","ullamco","labore","cillum","laboris","qui"],["aliquip","cillum","qui","ut","ea","eu","reprehenderit"],["nulla","elit","ipsum","pariatur","ullamco","ut","sint"],["fugiat","sit","ad","voluptate","officia","aute","duis"],["est","dolor","dolore","exercitation","minim","dolor","pariatur"]]"""
-            JsonPath.parse(LARGE_JSON)!!.read<ArrayNode>("$..tags")?.toString() shouldBe expected
-            JsonPath.parse(LARGE_JSON)!!.read<ArrayNode>("$..['tags']")?.toString() shouldBe expected
+            JsonPath.parse(LARGE_JSON)!!.read<JsonNode>("$..tags")?.toString() shouldBe expected
+            JsonPath.parse(LARGE_JSON)!!.read<JsonNode>("$..['tags']")?.toString() shouldBe expected
         }
 
         it("should get from longer path") {
@@ -384,59 +401,59 @@ class JsonPathTest : DescribeSpec({
         }
 
         it("should scan to get the first item of all sublists") {
-            JsonPath.parse(LARGE_JSON)!!.read<ArrayNode>("$[2]..[0]").toString() shouldBe """["nulla",{"id":0,"name":"Felecia Bright","other":{"a":{"b":{"c":"yo"}}}}]"""
+            JsonPath.parse(LARGE_JSON)!!.read<JsonNode>("$[2]..[0]").toString() shouldBe """["nulla",{"id":0,"name":"Felecia Bright","other":{"a":{"b":{"c":"yo"}}}}]"""
         }
 
         it("should scan to get the last item of all sublists") {
-            JsonPath.parse(LARGE_JSON)!!.read<ArrayNode>("$[2]..[-1]").toString() shouldBe """["sint",{"id":2,"name":"Marylou Caldwell","other":{"a":{"b":{"c":"yo"}}}}]"""
+            JsonPath.parse(LARGE_JSON)!!.read<JsonNode>("$[2]..[-1]").toString() shouldBe """["sint",{"id":2,"name":"Marylou Caldwell","other":{"a":{"b":{"c":"yo"}}}}]"""
         }
 
         it("should scan to get the first and third items of all sublists") {
-            JsonPath.parse(LARGE_JSON)!!.read<ArrayNode>("$[2]..[0,2]").toString() shouldBe """["nulla","ipsum",{"id":0,"name":"Felecia Bright","other":{"a":{"b":{"c":"yo"}}}},{"id":2,"name":"Marylou Caldwell","other":{"a":{"b":{"c":"yo"}}}}]"""
+            JsonPath.parse(LARGE_JSON)!!.read<JsonNode>("$[2]..[0,2]").toString() shouldBe """["nulla","ipsum",{"id":0,"name":"Felecia Bright","other":{"a":{"b":{"c":"yo"}}}},{"id":2,"name":"Marylou Caldwell","other":{"a":{"b":{"c":"yo"}}}}]"""
         }
 
         it("should scan to get the first and second from last items of all sublists") {
-            JsonPath.parse(LARGE_JSON)!!.read<ArrayNode>("$[2]..[0, -2]").toString() shouldBe """["nulla","ut",{"id":0,"name":"Felecia Bright","other":{"a":{"b":{"c":"yo"}}}},{"name":"Maryanne Wiggins","other":{"a":{"b":{"c":"yo"}}}}]"""
+            JsonPath.parse(LARGE_JSON)!!.read<JsonNode>("$[2]..[0, -2]").toString() shouldBe """["nulla","ut",{"id":0,"name":"Felecia Bright","other":{"a":{"b":{"c":"yo"}}}},{"name":"Maryanne Wiggins","other":{"a":{"b":{"c":"yo"}}}}]"""
         }
 
         it("should scan to get the first and second (range) items of all sublists") {
-            JsonPath.parse(LARGE_JSON)!!.read<ArrayNode>("$[2]..[0:2]").toString() shouldBe """["nulla","elit",{"id":0,"name":"Felecia Bright","other":{"a":{"b":{"c":"yo"}}}},{"name":"Maryanne Wiggins","other":{"a":{"b":{"c":"yo"}}}}]"""
+            JsonPath.parse(LARGE_JSON)!!.read<JsonNode>("$[2]..[0:2]").toString() shouldBe """["nulla","elit",{"id":0,"name":"Felecia Bright","other":{"a":{"b":{"c":"yo"}}}},{"name":"Maryanne Wiggins","other":{"a":{"b":{"c":"yo"}}}}]"""
         }
 
         it("should scan to get the third and all following items of all sublists") {
-            JsonPath.parse(LARGE_JSON)!!.read<ArrayNode>("$[2]..[2:]").toString() shouldBe """["ipsum","pariatur","ullamco","ut","sint",{"id":2,"name":"Marylou Caldwell","other":{"a":{"b":{"c":"yo"}}}}]"""
+            JsonPath.parse(LARGE_JSON)!!.read<JsonNode>("$[2]..[2:]").toString() shouldBe """["ipsum","pariatur","ullamco","ut","sint",{"id":2,"name":"Marylou Caldwell","other":{"a":{"b":{"c":"yo"}}}}]"""
         }
 
         it("should scan to get all items except for last item of all sublists") {
-            JsonPath.parse(LARGE_JSON)!!.read<ArrayNode>("$[2]..[:-1]").toString() shouldBe """["nulla","elit","ipsum","pariatur","ullamco","ut",{"id":0,"name":"Felecia Bright","other":{"a":{"b":{"c":"yo"}}}},{"name":"Maryanne Wiggins","other":{"a":{"b":{"c":"yo"}}}}]"""
+            JsonPath.parse(LARGE_JSON)!!.read<JsonNode>("$[2]..[:-1]").toString() shouldBe """["nulla","elit","ipsum","pariatur","ullamco","ut",{"id":0,"name":"Felecia Bright","other":{"a":{"b":{"c":"yo"}}}},{"name":"Maryanne Wiggins","other":{"a":{"b":{"c":"yo"}}}}]"""
         }
 
         it("should scan to get all items starting from second to last of all sublists") {
-            JsonPath.parse(LARGE_JSON)!!.read<ArrayNode>("$[2]..[-2:]").toString() shouldBe """["ut","sint",{"name":"Maryanne Wiggins","other":{"a":{"b":{"c":"yo"}}}},{"id":2,"name":"Marylou Caldwell","other":{"a":{"b":{"c":"yo"}}}}]"""
+            JsonPath.parse(LARGE_JSON)!!.read<JsonNode>("$[2]..[-2:]").toString() shouldBe """["ut","sint",{"name":"Maryanne Wiggins","other":{"a":{"b":{"c":"yo"}}}},{"id":2,"name":"Marylou Caldwell","other":{"a":{"b":{"c":"yo"}}}}]"""
         }
 
         it("should scan to get all items between first and last of all sublists (both sides exclusive)") {
-            JsonPath.parse(LARGE_JSON)!!.read<ArrayNode>("$[2]..[1:-1]").toString() shouldBe """["elit","ipsum","pariatur","ullamco","ut",{"name":"Maryanne Wiggins","other":{"a":{"b":{"c":"yo"}}}}]"""
+            JsonPath.parse(LARGE_JSON)!!.read<JsonNode>("$[2]..[1:-1]").toString() shouldBe """["elit","ipsum","pariatur","ullamco","ut",{"name":"Maryanne Wiggins","other":{"a":{"b":{"c":"yo"}}}}]"""
         }
 
         it("should scan to get all items from second to last, to 4th item of all sublists") {
-            JsonPath.parse(LARGE_JSON)!!.read<ArrayNode>("$[2]..[-2:5]").toString() shouldBe """[{"name":"Maryanne Wiggins","other":{"a":{"b":{"c":"yo"}}}},{"id":2,"name":"Marylou Caldwell","other":{"a":{"b":{"c":"yo"}}}}]"""
+            JsonPath.parse(LARGE_JSON)!!.read<JsonNode>("$[2]..[-2:5]").toString() shouldBe """[{"name":"Maryanne Wiggins","other":{"a":{"b":{"c":"yo"}}}},{"id":2,"name":"Marylou Caldwell","other":{"a":{"b":{"c":"yo"}}}}]"""
         }
 
         it("should scan to get second from last item of all sublists") {
-            JsonPath.parse(LARGE_JSON)!!.read<ArrayNode>("$[2]..[-2:-1]").toString() shouldBe """["ut",{"name":"Maryanne Wiggins","other":{"a":{"b":{"c":"yo"}}}}]"""
+            JsonPath.parse(LARGE_JSON)!!.read<JsonNode>("$[2]..[-2:-1]").toString() shouldBe """["ut",{"name":"Maryanne Wiggins","other":{"a":{"b":{"c":"yo"}}}}]"""
         }
 
         it("should scan to keys on same level of all sublists") {
-            JsonPath.parse(LARGE_JSON)!!.read<ArrayNode>("$[2]..['name','id']").toString() shouldBe """[{"name":"Marie Hampton"},{"name":"Felecia Bright","id":0},{"name":"Maryanne Wiggins"},{"name":"Marylou Caldwell","id":2}]"""
+            JsonPath.parse(LARGE_JSON)!!.read<JsonNode>("$[2]..['name','id']").toString() shouldBe """["Marie Hampton","Felecia Bright",0,"Maryanne Wiggins","Marylou Caldwell",2]"""
         }
 
         it("should scan to keys on different level of all sublists") {
-            JsonPath.parse(LARGE_JSON)!!.read<ArrayNode>("$[2]..['name','company','id']").toString() shouldBe """[{"name":"Marie Hampton","company":"ZENCO"},{"name":"Felecia Bright","id":0},{"name":"Maryanne Wiggins"},{"name":"Marylou Caldwell","id":2}]"""
+            JsonPath.parse(LARGE_JSON)!!.read<JsonNode>("$[2]..['name','company','id']").toString() shouldBe """["Marie Hampton","ZENCO","Felecia Bright",0,"Maryanne Wiggins","Marylou Caldwell",2]"""
         }
 
         it("should scan to get all items after the first of all sublists even if end out of range") {
-            JsonPath.parse(LARGE_JSON)!!.read<ArrayNode>("$[2]..[1:100]").toString() shouldBe """["elit","ipsum","pariatur","ullamco","ut","sint",{"name":"Maryanne Wiggins","other":{"a":{"b":{"c":"yo"}}}},{"id":2,"name":"Marylou Caldwell","other":{"a":{"b":{"c":"yo"}}}}]"""
+            JsonPath.parse(LARGE_JSON)!!.read<JsonNode>("$[2]..[1:100]").toString() shouldBe """["elit","ipsum","pariatur","ullamco","ut","sint",{"name":"Maryanne Wiggins","other":{"a":{"b":{"c":"yo"}}}},{"id":2,"name":"Marylou Caldwell","other":{"a":{"b":{"c":"yo"}}}}]"""
         }
 
         it("should get the key of every 2nd item in all sublists") {
@@ -452,14 +469,53 @@ class JsonPathTest : DescribeSpec({
     }
 
     describe("Wildcard") {
-        it("should get the values of the JSON object") {
-            JsonPath.parse(LARGE_JSON)!!.read<ArrayNode>("$..friends[-1].*").toString() shouldBe """[{"id":0,"name":"Lora Cotton","other":{"a":{"b":{"c":"yo"}}}},{"id":1,"name":"Gaines Henry","other":{"a":{"b":{"c":"yo"}}}},{"id":2,"name":"Dorothea Irwin","other":{"a":{"b":{"c":"yo"}}}}]"""
-            JsonPath.parse(LARGE_JSON)!!.read<ArrayNode>("$..friends[-1][*]").toString() shouldBe """[{"id":0,"name":"Lora Cotton","other":{"a":{"b":{"c":"yo"}}}},{"id":1,"name":"Gaines Henry","other":{"a":{"b":{"c":"yo"}}}},{"id":2,"name":"Dorothea Irwin","other":{"a":{"b":{"c":"yo"}}}}]"""
+        it("should handle all types of reads correctly") {
+            // we have obj, list, list, and scalars. It should handle them all correctly the further we go down with wildcards
+            // keep in mind wildcards always return a list, and drop scalars when going up a list. Scalars dont have levels to go up, only container nodes do
+
+            JsonPath.parse("""[{"bar": [42]}]""")!!.read<JsonNode>("$.*").toString() shouldBe """[{"bar":[42]}]""" // in root list
+            JsonPath.parse("""[{"bar": [42]}]""")!!.read<JsonNode>("$.*.*").toString() shouldBe """[[42]]""" // root list wrapped around item from next level
+            JsonPath.parse("""[{"bar": [42]}]""")!!.read<JsonNode>("$.*.*.*").toString() shouldBe """[42]""" // root list wrapped around item from next level
+            JsonPath.parse("""[{"bar": [42]}]""")!!.read<JsonNode>("$.*.*.*.*").toString() shouldBe "[]" // root list since wildcard always returns a list
+
+            JsonPath.parse("""[{"bar": [42]},{"bae": [30]}]""")!!.read<JsonNode>("$.*").toString() shouldBe """[{"bar":[42]},{"bae":[30]}]""" // in root list
+            JsonPath.parse("""[{"bar": [42]},{"bae": [30]}]""")!!.read<JsonNode>("$.*.*").toString() shouldBe """[[42],[30]]""" // root list wrapped around items from next level
+            JsonPath.parse("""[{"bar": [42]},{"bae": [30]}]""")!!.read<JsonNode>("$.*.*.*").toString() shouldBe """[42,30]""" // root list wrapped around items from next level
+            JsonPath.parse("""[{"bar": [42]},{"bae": [30]}]""")!!.read<JsonNode>("$.*.*.*.*").toString() shouldBe "[]" // root list since wildcard always returns a list
+
+            JsonPath.parse("""[{"bar": [42]},{"bae": [30,31]}]""")!!.read<JsonNode>("$.*").toString() shouldBe """[{"bar":[42]},{"bae":[30,31]}]""" // in root list
+            JsonPath.parse("""[{"bar": [42]},{"bae": [30,31]}]""")!!.read<JsonNode>("$.*.*").toString() shouldBe """[[42],[30,31]]""" // root list wrapped around items from next level
+            JsonPath.parse("""[{"bar": [42]},{"bae": [30,31]}]""")!!.read<JsonNode>("$.*.*.*").toString() shouldBe """[42,30,31]""" // root list wrapped around items from next level
+            JsonPath.parse("""[{"bar": [42]},{"bae": [30,31]}]""")!!.read<JsonNode>("$.*.*.*.*").toString() shouldBe "[]" // root list since wildcard always returns a list
+
+            JsonPath.parse("""[{"bar": [42], "scalarkey": "scalar2"}, "scalar1"]""")!!.read<JsonNode>("$.*").toString() shouldBe """[{"bar":[42],"scalarkey":"scalar2"},"scalar1"]""" // in root list
+            JsonPath.parse("""[{"bar": [42], "scalarkey": "scalar2"}, "scalar1"]""")!!.read<JsonNode>("$.*.*").toString() shouldBe """[[42],"scalar2"]""" // root list wrapped around items from next level
+            JsonPath.parse("""[{"bar": [42], "scalarkey": "scalar2"}, "scalar1"]""")!!.read<JsonNode>("$.*.*.*").toString() shouldBe """[42]""" // root list wrapped around item from next level
+            JsonPath.parse("""[{"bar": [42], "scalarkey": "scalar2"}, "scalar1"]""")!!.read<JsonNode>("$.*.*.*.*").toString() shouldBe "[]" // root list since wildcard always returns a list
+
+            JsonPath.parse("""[[1], [2,3]]""")!!.read<JsonNode>("$.*").toString() shouldBe """[[1],[2,3]]"""
+            JsonPath.parse("""[[1], [2,3]]""")!!.read<JsonNode>("$.*.*").toString() shouldBe """[1,2,3]"""
+            JsonPath.parse("""[[1], [2,3]]""")!!.read<JsonNode>("$.*.*.*").toString() shouldBe """[]"""
         }
 
-        it("should return same list at end of path") {
-            JsonPath.parse(LARGE_JSON)!!.read<ArrayNode>("$..friends..name[1:3].*").toString() shouldBe """["Vonda Howe","Harrell Pratt"]"""
-            JsonPath.parse(LARGE_JSON)!!.read<ArrayNode>("$..friends..name[1:3][*]").toString() shouldBe """["Vonda Howe","Harrell Pratt"]"""
+        it("should handle lists properly") {
+            // Returns list held by "bar", wrapped in the root level list since wildcard always returns list
+            JsonPath.parse("""[{"bar": [42]}]""")!!.read<JsonNode>("$[*].bar").toString() shouldBe """[[42]]"""
+            // Returns root level list now with the item from the inner list.
+            JsonPath.parse("""[{"bar": [42]}]""")!!.read<JsonNode>("$.*.bar.*").toString() shouldBe """[42]"""
+            JsonPath.parse("""[{"bar": [42]}]""")!!.read<JsonNode>("$[*].bar[*]").toString() shouldBe """[42]"""
+            // This would be a wildcard on a root level list which removes the scalars on that level. It should be list, not null as wildcard always returns list
+            JsonPath.parse("""[{"bar": [42]}]""")!!.read<JsonNode>("$[*].bar[*][*]").toString() shouldBe """[]"""
+
+            JsonPath.parse("""[[1], [2,3]]""")!!.read<JsonNode>("$.*[0]").toString() shouldBe """[1,2]""" // first item of each sublist in root
+            JsonPath.parse("""[[1], [2,3]]""")!!.read<JsonNode>("$.*[1]").toString() shouldBe """[3]""" // second item of each sublist in root, which there is only 1 of
+            JsonPath.parse("""[[1], [2,3]]""")!!.read<JsonNode>("$.*[1].*").toString() shouldBe """[]""" // second item of each sublist in root, which there is only 1 of
+
+            println(JsonPath.parse(LARGE_JSON)!!.read<JsonNode>("$..friends").toString())
+            println(JsonPath.parse(LARGE_JSON)!!.read<JsonNode>("$..friends..name").toString())
+            println(JsonPath.parse(LARGE_JSON)!!.read<JsonNode>("$..friends..name[1]").toString())
+            JsonPath.parse(LARGE_JSON)!!.read<JsonNode>("$..friends.*.name").toString() shouldBe """["Kathrine Osborn","Vonda Howe","Harrell Pratt","Mason Leach","Spencer Valenzuela","Hope Medina","Felecia Bright","Maryanne Wiggins","Marylou Caldwell","Rios Norton","Judy Good","Rosetta Stanley","Lora Cotton","Gaines Henry","Dorothea Irwin"]"""
+            JsonPath.parse(LARGE_JSON)!!.read<List<String>>("$..friends.[*].name") shouldBe listOf("Kathrine Osborn","Vonda Howe","Harrell Pratt","Mason Leach","Spencer Valenzuela","Hope Medina","Felecia Bright","Maryanne Wiggins","Marylou Caldwell","Rios Norton","Judy Good","Rosetta Stanley","Lora Cotton","Gaines Henry","Dorothea Irwin")
         }
 
         it("should return null if null read before wildcard") {
@@ -473,6 +529,11 @@ class JsonPathTest : DescribeSpec({
             JsonPath.parse("true")!!.read<Boolean>("$.*") shouldBe true
             JsonPath.parse("false")!!.read<Boolean>("$.*") shouldBe false
             JsonPath.parse(""""hello"""")!!.read<String>("$.*") shouldBe "hello"
+        }
+
+        it("should get the values of the JSON object") {
+            JsonPath.parse(LARGE_JSON)!!.read<JsonNode>("$..friends[-1].*").toString() shouldBe """[2,"Harrell Pratt",{"a":{"b":{"c":"yo"}}},2,"Hope Medina",{"a":{"b":{"c":"yo"}}},2,"Marylou Caldwell",{"a":{"b":{"c":"yo"}}},2,"Rosetta Stanley",{"a":{"b":{"c":"yo"}}},2,"Dorothea Irwin",{"a":{"b":{"c":"yo"}}}]"""
+            JsonPath.parse(LARGE_JSON)!!.read<JsonNode>("$..friends[-1][*]").toString() shouldBe """[2,"Harrell Pratt",{"a":{"b":{"c":"yo"}}},2,"Hope Medina",{"a":{"b":{"c":"yo"}}},2,"Marylou Caldwell",{"a":{"b":{"c":"yo"}}},2,"Rosetta Stanley",{"a":{"b":{"c":"yo"}}},2,"Dorothea Irwin",{"a":{"b":{"c":"yo"}}}]"""
         }
     }
 })

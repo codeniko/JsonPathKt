@@ -46,13 +46,12 @@ class JsonPath(path: String) {
             return null
         }
 
-        val lastValue = tokens.fold(initial = json) { valueAtPath: Any?, nextToken: Token ->
+        val lastValue = tokens.fold(initial = json) { valueAtPath: JsonNode?, nextToken: Token ->
             valueAtPath?.let { nextToken.read(it) }
         }
 
         return when {
-            lastValue == null -> null
-            lastValue is JsonNode && (lastValue.isNull || lastValue.isMissingNode) -> null
+            lastValue == null || lastValue.isNull || lastValue.isMissingNode -> null
             else -> {
                 try {
                     JacksonUtil.mapper.convertValue<T>(lastValue)

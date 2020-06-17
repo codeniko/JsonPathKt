@@ -10,7 +10,7 @@ private const val DEFAULT_RUNS = 30
 private const val DEFAULT_CALLS_PER_RUN = 80000
 private var printReadmeFormat = false
 
-private val timestamp: Long
+internal val timestamp: Long
     get() = System.currentTimeMillis()
 
 private fun benchmark(callsPerRun: Int = DEFAULT_CALLS_PER_RUN, runs: Int = DEFAULT_RUNS, f: () -> Unit): Long {
@@ -159,5 +159,9 @@ class BenchmarkTest : StringSpec({
 
     "benchmark multi object access" {
         runBenchmarksAndPrintResults("$[0]['latitude','longitude','isActive']")
+    }
+
+    "benchmark wildcard" {
+        runBenchmarksAndPrintResults("$[0]['tags'].*")
     }
 })
