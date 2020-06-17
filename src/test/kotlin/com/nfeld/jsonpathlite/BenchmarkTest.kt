@@ -10,9 +10,6 @@ private const val DEFAULT_RUNS = 30
 private const val DEFAULT_CALLS_PER_RUN = 80000
 private var printReadmeFormat = false
 
-internal val timestamp: Long
-    get() = System.currentTimeMillis()
-
 private fun benchmark(callsPerRun: Int = DEFAULT_CALLS_PER_RUN, runs: Int = DEFAULT_RUNS, f: () -> Unit): Long {
     // warmup
     f()

@@ -27,6 +27,27 @@ task benchmark {
 }
 benchmark.finalizedBy(test)
 
+task perfTest(type: Test) {
+    // enable junit 5
+    useJUnitPlatform()
+
+    doFirst {
+        filter {
+            include("com/nfeld/jsonpathlite/PerfTest.class")
+        }
+        testLogging {
+            // show test results for following events
+            events 'PASSED', 'FAILED', 'SKIPPED'
+
+            // show printlines
+            showStandardStreams = true
+        }
+    }
+
+    // Make this task never up to date, thus forcing rerun of all tests whenever task is run
+    outputs.upToDateWhen { false }
+}
+
 test {
     // enable junit 5
     useJUnitPlatform()
@@ -47,7 +68,10 @@ test {
         } else {
             filter {
                 includeTestsMatching("com.nfeld.jsonpathlite.*")
-                exclude("com/nfeld/jsonpathlite/BenchmarkTest.class")
+                exclude(
+                        "com/nfeld/jsonpathlite/BenchmarkTest.class",
+                        "com/nfeld/jsonpathlite/PerfTest.class"
+                )
             }
 
             testLogging {
