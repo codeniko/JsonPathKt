@@ -59,10 +59,14 @@ class TokenTest : DescribeSpec({
 
             it("should get character of a String at specified index") {
                 ArrayAccessorToken(1).read(readTree("\"hello\"")).toString() shouldBe "\"e\""
+                ArrayAccessorToken(-1).read(readTree("\"hello\"")).toString() shouldBe "\"o\""
+                ArrayAccessorToken(-8).read(readTree("\"hello\"")) shouldBe null // out of bounds
             }
 
             it("should get specified character of every String in RootLevelArrayNode") {
                 ArrayAccessorToken(1).read(WildcardToken().read(readTree("""["hello","world"]"""))!!).toString() shouldBe """["e","o"]"""
+                ArrayAccessorToken(-1).read(WildcardToken().read(readTree("""["hello","world"]"""))!!).toString() shouldBe """["o","d"]"""
+                ArrayAccessorToken(-4).read(WildcardToken().read(readTree("""["h","world"]"""))!!).toString() shouldBe """["o"]"""
             }
         }
 
@@ -115,6 +119,12 @@ class TokenTest : DescribeSpec({
             it("should not get characters of every String in RootLevelArrayNode") {
                 ArrayLengthBasedRangeAccessorToken(0,2).read(WildcardToken().read(readTree("""["hello","world"]"""))!!).toString() shouldBe "[]"
                 ArrayLengthBasedRangeAccessorToken(2,null, -1).read(WildcardToken().read(readTree("""["hello","world"]"""))!!).toString() shouldBe "[]"
+            }
+
+            it("should handle objects in RootLevelArrayNode") {
+                ArrayLengthBasedRangeAccessorToken(0, 1).read(WildcardToken().read(readTree("""[{"a":1,"b":{"c":2,"d":3},"e":4}]"""))!!).toString() shouldBe "[]"
+                ArrayLengthBasedRangeAccessorToken(0, -1).read(WildcardToken().read(readTree("""[{"a":1,"b":{"c":2,"d":3},"e":4}]"""))!!).toString() shouldBe "[]"
+                ArrayLengthBasedRangeAccessorToken(0, -1).read(WildcardToken().read(readTree("""[{"p":true},{"a":1,"b":{"c":2,"d":3},"e":4}]"""))!!).toString() shouldBe "[]"
             }
 
             it("should handle different levels of list nesting") {
@@ -348,6 +358,13 @@ class TokenTest : DescribeSpec({
                 (res1 is RootLevelArrayNode) shouldBe true
                 val res2 = WildcardToken().read(res1!!)
                 res2.toString() shouldBe """["value",0,1]"""
+            }
+
+            it("should override toString, hashCode, and equals") {
+                WildcardToken().toString() shouldBe "WildcardToken"
+                WildcardToken().hashCode() shouldBe "WildcardToken".hashCode()
+                WildcardToken().equals(WildcardToken()) shouldBe true
+                WildcardToken().equals(RootLevelArrayNode()) shouldBe false
             }
         }
     }

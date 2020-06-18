@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.node.*
 import com.nfeld.jsonpathkt.cache.CacheProvider
 import com.nfeld.jsonpathkt.extension.read
 import com.nfeld.jsonpathkt.util.JacksonUtil
+import com.nfeld.jsonpathkt.util.RootLevelArrayNode
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
 
@@ -77,6 +78,13 @@ class JsonPathTest : DescribeSpec({
         it("should preserve order") {
             JsonPath.parse(BOOKS_JSON)!!.read<List<Double>>("$.store..price") shouldBe listOf(8.95, 12.99, 8.99, 22.99, 19.95)
             JsonPath.parse("""{"d": 4, "f": 6, "e": 5, "a": 1, "b": 2, "c": 3}""")!!.read<List<Int>>("$.*") shouldBe listOf(4,6,5,1,2,3)
+        }
+
+        it("returned RootLevelArrayNode should be ArrayNode since internal") {
+            JsonPath.parse("""{"d": 4, "f": 6, "e": 5, "a": 1, "b": 2, "c": 3}""")!!.read<JsonNode>("$.*").toString() shouldBe "[4,6,5,1,2,3]"
+            (JsonPath.parse("""{"d": 4, "f": 6, "e": 5, "a": 1, "b": 2, "c": 3}""")!!.read<JsonNode>("$.*") is ArrayNode) shouldBe true
+            (JsonPath.parse("""{"d": 4, "f": 6, "e": 5, "a": 1, "b": 2, "c": 3}""")!!.read<JsonNode>("$.*") is RootLevelArrayNode) shouldBe false
+            (JsonPath.parse("""[1,2,3,4]""")!!.read<JsonNode>("$.*") is RootLevelArrayNode) shouldBe false
         }
     }
 

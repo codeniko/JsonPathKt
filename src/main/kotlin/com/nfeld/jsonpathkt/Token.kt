@@ -383,7 +383,7 @@ internal class WildcardToken : Token {
     override fun read(json: JsonNode): JsonNode? {
         return when (json) {
             is ObjectNode -> {
-                val result = createArrayNode()
+                val result = RootLevelArrayNode()
                 json.forEach {
                     if (it.isNotNullOrMissing()) {
                         result.add(it)

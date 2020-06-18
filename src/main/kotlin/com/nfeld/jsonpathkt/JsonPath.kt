@@ -65,14 +65,14 @@ class JsonPath(path: String) {
     /**
      * Check if a ArrayNode contains only primitive values (in this case, non-ObjectNode/ArrayNode).
      */
-    private fun containsOnlyPrimitives(arrayNode: ArrayNode) : Boolean {
-        arrayNode.forEach {
-            if (it.isObject || it.isArray) {
-                return false // fail fast
-            }
-        }
-        return true
-    }
+//    private fun containsOnlyPrimitives(arrayNode: ArrayNode) : Boolean {
+//        arrayNode.forEach {
+//            if (it.isObject || it.isArray) {
+//                return false // fail fast
+//            }
+//        }
+//        return true
+//    }
 
 //    private fun isSpecialChar(c: Char): Boolean {
 //        return c == '"' || c == '\\' || c == '/' || c == 'b' || c == 'f' || c == 'n' || c == 'r' || c == 't'
