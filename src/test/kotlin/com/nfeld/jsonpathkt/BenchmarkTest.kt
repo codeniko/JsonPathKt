@@ -163,4 +163,8 @@ class BenchmarkTest : StringSpec({
     "benchmark wildcard" {
         runBenchmarksAndPrintResults("$[0]['tags'].*")
     }
+
+    "benchmark recursive wildcard" {
+        runBenchmarksAndPrintResults("$[0]..*")
+    }
 })

@@ -7,7 +7,7 @@
 With functional programming aspects found in langauges like Kotlin, Scala, and streams/lambdas in Java8, this
 library simplifies other implementations like [Jayway's JsonPath](https://github.com/json-path/JsonPath) by removing 
 *filter operations* and *in-path functions* to focus on what matters most: modern fast value extractions from JSON objects. 
-Up to **2x more efficient** in most cases; see [Benchmarks](#benchmarks).
+Up to **4x more efficient** in some cases; see [Benchmarks](#benchmarks).
 
 In order to make the library functional programming friendly, JsonPathKt returns `null` instead of throwing exceptions 
 while evaluating a path against a JSON object. Throwing exceptions breaks flow control and should be reserved for exceptional 
@@ -130,37 +130,40 @@ Given the JSON:
 | $.family.children[0].*    |  Names & age values of first child |
 
 ## Benchmarks
-These are benchmark tests of JsonPathKt against Jayway's JsonPath implementation. Results for each test is the average of 30 runs with 80,000 reads per run. You can run these test locally with `./runBenchmarks.sh`
+These are benchmark tests of JsonPathKt against Jayway's JsonPath implementation. Results for each test is the average of 
+30 runs with 80,000 reads per run and each test returns its own respective results (some larger than others).
+You can run these tests locally with `./runBenchmarks.sh`
 
 **Evaluating/reading path against large JSON**
 
 | Path Tested | JsonPathKt (ms) | JsonPath (ms) |
 | :---------- | :------ | :----- |
-|  $[0]['tags'][3:]  |  72 ms *(53 ms w/ cache)* |  107 ms *(70 ms w/ cache)*  |
-|  $[0]['tags'][0,3,5]  |  67 ms *(30 ms w/ cache)* |  121 ms *(50 ms w/ cache)*  |
-|  $..[:2]  |  350 ms *(357 ms w/ cache)* |  428 ms *(449 ms w/ cache)*  |
-|  $..[2:]  |  420 ms *(430 ms w/ cache)* |  447 ms *(441 ms w/ cache)*  |
-|  $..[1:-1]  |  487 ms *(479 ms w/ cache)* |  365 ms *(350 ms w/ cache)*  |
-|  $[2]._id  |  33 ms *(21 ms w/ cache)* |  51 ms *(28 ms w/ cache)*  |
-|  $[0]['tags'][3:5]  |  74 ms *(27 ms w/ cache)* |  93 ms *(49 ms w/ cache)*  |
-|  $[0]['tags'][-3]  |  51 ms *(16 ms w/ cache)* |  82 ms *(38 ms w/ cache)*  |
-|  $[0].friends[1].other.a.b['c']  |  72 ms *(20 ms w/ cache)* |  145 ms *(73 ms w/ cache)*  |
-|  $..name  |  86 ms *(89 ms w/ cache)* |  473 ms *(533 ms w/ cache)*  |
-|  $..['email','name']  |  199 ms *(200 ms w/ cache)* |  473 ms *(469 ms w/ cache)*  |
-|  $..[1]  |  214 ms *(208 ms w/ cache)* |  403 ms *(396 ms w/ cache)*  |
-|  $[0]['latitude','longitude','isActive']  |  96 ms *(45 ms w/ cache)* |  113 ms *(58 ms w/ cache)*  |
-|  $[0]['tags'][:3]  |  75 ms *(33 ms w/ cache)* |  104 ms *(57 ms w/ cache)*  |
+|  $[0].friends[1].other.a.b['c']  |  88 ms *(35 ms w/ cache)* |  144 ms *(79 ms w/ cache)*  |
+|  $[2]._id  |  34 ms *(14 ms w/ cache)* |  48 ms *(28 ms w/ cache)*  |
+|  $..name  |  82 ms *(84 ms w/ cache)* |  450 ms *(572 ms w/ cache)*  |
+|  $..['email','name']  |  116 ms *(108 ms w/ cache)* |  479 ms *(522 ms w/ cache)*  |
+|  $..[1]  |  203 ms *(202 ms w/ cache)* |  401 ms *(423 ms w/ cache)*  |
+|  $..[:2]  |  352 ms *(346 ms w/ cache)* |  442 ms *(437 ms w/ cache)*  |
+|  $..[2:]  |  426 ms *(419 ms w/ cache)* |  476 ms *(470 ms w/ cache)*  |
+|  $[0]['tags'][-3]  |  67 ms *(17 ms w/ cache)* |  83 ms *(37 ms w/ cache)*  |
+|  $[0]['tags'][:3]  |  90 ms *(36 ms w/ cache)* |  103 ms *(55 ms w/ cache)*  |
+|  $[0]['tags'][3:]  |  97 ms *(48 ms w/ cache)* |  112 ms *(65 ms w/ cache)*  |
+|  $[0]['tags'][3:5]  |  85 ms *(29 ms w/ cache)* |  101 ms *(50 ms w/ cache)*  |
+|  $[0]['tags'][0,3,5]  |  95 ms *(36 ms w/ cache)* |  122 ms *(52 ms w/ cache)*  |
+|  $[0]['latitude','longitude','isActive']  |  97 ms *(36 ms w/ cache)* |  124 ms *(59 ms w/ cache)*  |
+|  $[0]['tags'].*  |  88 ms *(47 ms w/ cache)* |  121 ms *(86 ms w/ cache)*  |
+|  $[0]..*  |  828 ms *(796 ms w/ cache)* |  797 ms *(830 ms w/ cache)*  |
 
 
-**Compiling JsonPath string to internal tokens**
+**Compiling JsonPath strings to internal tokens**
 
 | Path size | JsonPathKt | JsonPath |
 | :-------- | :----------- | :------- |
-|  7 chars, 1 tokens  |  9 ms *(2 ms w/ cache)* |  10 ms *(9 ms w/ cache)* |
-|  16 chars, 3 tokens  |  22 ms *(2 ms w/ cache)* |  27 ms *(27 ms w/ cache)* |
-|  30 chars, 7 tokens  |  44 ms *(2 ms w/ cache)* |  66 ms *(66 ms w/ cache)* |
-|  65 chars, 16 tokens  |  103 ms *(2 ms w/ cache)* |  161 ms *(161 ms w/ cache)* |
-|  88 chars, 19 tokens  |  133 ms *(2 ms w/ cache)* |  214 ms *(214 ms w/ cache)* |
+|  7 chars, 1 tokens  |  14 ms *(2 ms w/ cache)* |  9 ms *(9 ms w/ cache)* |
+|  16 chars, 3 tokens  |  26 ms *(2 ms w/ cache)* |  25 ms *(25 ms w/ cache)* |
+|  30 chars, 7 tokens  |  55 ms *(2 ms w/ cache)* |  63 ms *(57 ms w/ cache)* |
+|  65 chars, 16 tokens  |  114 ms *(2 ms w/ cache)* |  157 ms *(142 ms w/ cache)* |
+|  88 chars, 19 tokens  |  205 ms *(2 ms w/ cache)* |  234 ms *(204 ms w/ cache)* |
 
 # Cache
 JsonPathKt uses an LRU cache by default to cache compiled JsonPath tokens. If you don't want to use the cache, you can disable it or set the CacheProvider to use your own implementation of the Cache interface.
@@ -175,4 +178,4 @@ CacheProvider.setCache(object : Cache {
 })
 ```
 
-[![Analytics](https://ga-beacon.appspot.com/UA-116910991-3/jsonpathkt/index)](https://github.com/igrigorik/ga-beacon)
+[![Analytics](https://ga-beacon.appspot.com/UA-116910991-3/jsonpathlite/index)](https://github.com/igrigorik/ga-beacon)
