@@ -3,7 +3,7 @@ package com.nfeld.jsonpathkt.util
 import com.fasterxml.jackson.databind.node.ArrayNode
 import com.nfeld.jsonpathkt.extension.children
 
-class RootLevelArrayNode : ArrayNode {
+internal class RootLevelArrayNode : ArrayNode {
 
     /**
      * Creates an empty RootLevelArrayNode
