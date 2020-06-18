@@ -54,14 +54,14 @@ JsonPathKt is available at the Maven Central repository.
 <dependency>
   <groupId>com.nfeld.jsonpathkt</groupId>
   <artifactId>jsonpathkt</artifactId>
-  <version>2.0.0</version>
+  <version>2.0.0-SNAPSHOT</version>
 </dependency>
 ```
 
 **Gradle**
 ```gradle
 dependencies {
-    implementation 'com.nfeld.jsonpathkt:jsonpathkt:2.0.0'
+    implementation 'com.nfeld.jsonpathkt:jsonpathkt:2.0.0-SNAPSHOT'
 }
 ```
 
