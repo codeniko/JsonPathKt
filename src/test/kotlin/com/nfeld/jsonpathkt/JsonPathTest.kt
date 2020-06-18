@@ -342,6 +342,23 @@ class JsonPathTest : DescribeSpec({
                 JsonPath.parse(FAMILY_JSON)!!.read<List<Map<String, Any>>>("$.family.children[:]") shouldBe expected
                 JsonPath.parse(FAMILY_JSON)!!.read<List<Map<String, Any>>>("$.family.children[0:]") shouldBe expected
             }
+
+            it("[:] combos") {
+                val json = """[{"c":"cc1","d":"dd1","e":"ee1"},{"c":"cc2","d":"dd2","e":"ee2"}]"""
+                JsonPath.parse(json)!!.read<JsonNode>("$[:]").toString() shouldBe """[{"c":"cc1","d":"dd1","e":"ee1"},{"c":"cc2","d":"dd2","e":"ee2"}]"""
+                JsonPath.parse(json)!!.read<JsonNode>("$[:]['c']").toString() shouldBe """["cc1","cc2"]"""
+                JsonPath.parse(json)!!.read<JsonNode>("$[:]['c','d']").toString() shouldBe """["cc1","dd1","cc2","dd2"]"""
+                JsonPath.parse(json)!!.read<JsonNode>("$..[:]").toString() shouldBe """[{"c":"cc1","d":"dd1","e":"ee1"},{"c":"cc2","d":"dd2","e":"ee2"}]"""
+                JsonPath.parse(json)!!.read<JsonNode>("$.*[:]").toString() shouldBe """[]"""
+
+                val json2 = "[1,[2],[3,4],[5,6,7]]"
+                JsonPath.parse(json2)!!.read<JsonNode>("$[:]").toString() shouldBe """[1,[2],[3,4],[5,6,7]]"""
+                JsonPath.parse(json2)!!.read<JsonNode>("$[:][0]").toString() shouldBe """[2,3,5]"""
+                JsonPath.parse(json2)!!.read<JsonNode>("$[:][1]").toString() shouldBe """[4,6]"""
+                JsonPath.parse(json2)!!.read<JsonNode>("$.*[:]").toString() shouldBe """[2,3,4,5,6,7]"""
+                JsonPath.parse(json2)!!.read<JsonNode>("$..[:]").toString() shouldBe """[1,[2],[3,4],[5,6,7],2,3,4,5,6,7]"""
+                JsonPath.parse(json2)!!.read<JsonNode>("$..[:].*").toString() shouldBe """[2,3,4,5,6,7]"""
+            }
         }
     }
 
