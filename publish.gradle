@@ -20,13 +20,13 @@ publishing {
             }
 
             pom {
-                name = 'JsonPathLite'
+                name = 'JsonPathKt'
                 description = 'A lighter and more efficient implementation of JsonPath in Kotlin'
-                url = 'https://github.com/codeniko/JsonPathLite'
+                url = 'https://github.com/codeniko/JsonPathKt'
                 licenses {
                     license {
                         name = 'BSD-3-Clause'
-                        url = 'https://github.com/codeniko/JsonPathLite/blob/master/LICENSE'
+                        url = 'https://github.com/codeniko/JsonPathKt/blob/master/LICENSE'
                     }
                 }
                 developers {
@@ -36,9 +36,9 @@ publishing {
                     }
                 }
                 scm {
-                    connection = 'scm:git:git://github.com/codeniko/JsonPathLite.git'
-                    developerConnection = 'scm:git:ssh://git@github.com:codeniko/JsonPathLite.git'
-                    url = 'https://github.com/codeniko/JsonPathLite'
+                    connection = 'scm:git:git://github.com/codeniko/JsonPathKt.git'
+                    developerConnection = 'scm:git:ssh://git@github.com:codeniko/JsonPathKt.git'
+                    url = 'https://github.com/codeniko/JsonPathKt'
                 }
             }
 

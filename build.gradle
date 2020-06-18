@@ -13,7 +13,7 @@ ext {
     jacksonVersion = '2.11.0'
 }
 
-group 'com.nfeld.jsonpathlite'
+group 'com.nfeld.jsonpathkt'
 version = '2.0.0' + (snapshotVersion ? "-SNAPSHOT" : "")
 
 repositories {

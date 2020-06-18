@@ -1,4 +1,4 @@
-package com.nfeld.jsonpathlite.cache
+package com.nfeld.jsonpathkt.cache
 
 object CacheProvider {
 

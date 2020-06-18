@@ -1,4 +1,4 @@
-package com.nfeld.jsonpathlite
+package com.nfeld.jsonpathkt
 
 import io.kotest.core.spec.style.StringSpec
 

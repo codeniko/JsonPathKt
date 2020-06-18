@@ -1,7 +1,7 @@
-package com.nfeld.jsonpathlite.cache
+package com.nfeld.jsonpathkt.cache
 
-import com.nfeld.jsonpathlite.JsonPath
-import com.nfeld.jsonpathlite.resetCacheProvider
+import com.nfeld.jsonpathkt.JsonPath
+import com.nfeld.jsonpathkt.resetCacheProvider
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeAll

@@ -1,11 +1,11 @@
-package com.nfeld.jsonpathlite.extension
+package com.nfeld.jsonpathkt.extension
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.ArrayNode
 import com.fasterxml.jackson.databind.node.MissingNode
 import com.fasterxml.jackson.databind.node.NullNode
 import com.fasterxml.jackson.databind.node.ObjectNode
-import com.nfeld.jsonpathlite.JsonPath
+import com.nfeld.jsonpathkt.JsonPath
 
 inline fun <reified T : Any> JsonNode.read(jsonpath: String): T? {
     return JsonPath(jsonpath).readFromJson(this)

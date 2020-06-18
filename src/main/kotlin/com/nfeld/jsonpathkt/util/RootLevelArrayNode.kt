@@ -1,8 +1,8 @@
-package com.nfeld.jsonpathlite.util
+package com.nfeld.jsonpathkt.util
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.ArrayNode
-import com.nfeld.jsonpathlite.extension.children
+import com.nfeld.jsonpathkt.extension.children
 
 class RootLevelArrayNode : ArrayNode {
 

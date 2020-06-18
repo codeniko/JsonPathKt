@@ -1,4 +1,4 @@
-package com.nfeld.jsonpathlite.util
+package com.nfeld.jsonpathkt.util
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.SerializationFeature

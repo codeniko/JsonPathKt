@@ -1,9 +1,9 @@
-package com.nfeld.jsonpathlite
+package com.nfeld.jsonpathkt
 
 import com.jayway.jsonpath.Configuration
 import com.jayway.jsonpath.spi.cache.NOOPCache
 import com.jayway.jsonpath.spi.json.JacksonJsonProvider
-import com.nfeld.jsonpathlite.cache.CacheProvider
+import com.nfeld.jsonpathkt.cache.CacheProvider
 import io.kotest.core.spec.style.StringSpec
 
 private const val DEFAULT_RUNS = 30
@@ -28,7 +28,7 @@ private fun benchmark(callsPerRun: Int = DEFAULT_CALLS_PER_RUN, runs: Int = DEFA
     return times.average().toLong()
 }
 
-private fun benchmarkJsonPathLite(path: String, callsPerRun: Int = DEFAULT_CALLS_PER_RUN, runs: Int = DEFAULT_RUNS): Long {
+private fun benchmarkJsonPathKt(path: String, callsPerRun: Int = DEFAULT_CALLS_PER_RUN, runs: Int = DEFAULT_RUNS): Long {
     val json = JsonPath.parse(LARGE_JSON)!! // pre-parse json
 //    println("our    result: " + JsonPath(path).readFromJson<Any>(json).toString())
     return benchmark(callsPerRun, runs) { JsonPath(path).readFromJson<Any>(json) }
@@ -46,20 +46,20 @@ private fun runBenchmarksAndPrintResults(path: String, callsPerRun: Int = DEFAUL
     resetCaches()
 
     // first benchmarks will be using caches
-    val lite = benchmarkJsonPathLite(path, callsPerRun, runs)
+    val kt = benchmarkJsonPathKt(path, callsPerRun, runs)
     val other = benchmarkJsonPath(path, callsPerRun, runs)
 
     // now disable caches
     CacheProvider.setCache(null)
     resetJaywayCacheProvider()
     com.jayway.jsonpath.spi.cache.CacheProvider.setCache(NOOPCache())
-    val liteNoCache = benchmarkJsonPathLite(path, callsPerRun, runs)
+    val ktNoCache = benchmarkJsonPathKt(path, callsPerRun, runs)
     val otherNoCache = benchmarkJsonPath(path, callsPerRun, runs)
 
     if (printReadmeFormat) {
-        println("|  $path  |  $liteNoCache ms *($lite ms w/ cache)* |  $otherNoCache ms *($other ms w/ cache)*  |")
+        println("|  $path  |  $ktNoCache ms *($kt ms w/ cache)* |  $otherNoCache ms *($other ms w/ cache)*  |")
     } else {
-        println("$path   lite: ${lite}, jsonpath: ${other}     Without caches:  lite: ${liteNoCache}, jsonpath: ${otherNoCache}")
+        println("$path   kt: ${kt}, jsonpath: ${other}     Without caches:  kt: ${ktNoCache}, jsonpath: ${otherNoCache}")
     }
 }
 
@@ -90,7 +90,7 @@ class BenchmarkTest : StringSpec({
             resetCaches()
 
             // first with caches
-            val lite = benchmark { JsonPath(path) }
+            val kt = benchmark { JsonPath(path) }
             val other = benchmark { com.jayway.jsonpath.JsonPath.compile(path) }
 
             // now disable caches
@@ -98,16 +98,16 @@ class BenchmarkTest : StringSpec({
             resetJaywayCacheProvider()
             com.jayway.jsonpath.spi.cache.CacheProvider.setCache(NOOPCache())
 
-            val liteNoCache = benchmark { JsonPath(path) }
+            val ktNoCache = benchmark { JsonPath(path) }
             val otherNoCache = benchmark { com.jayway.jsonpath.JsonPath.compile(path) }
 
             val numTokens = PathCompiler.compile(path).size
             val name = "${path.length} chars, $numTokens tokens"
 
             if (printReadmeFormat) {
-                println("|  $name  |  $liteNoCache ms *($lite ms w/ cache)* |  $otherNoCache ms *($other ms w/ cache)* |")
+                println("|  $name  |  $ktNoCache ms *($kt ms w/ cache)* |  $otherNoCache ms *($other ms w/ cache)* |")
             } else {
-                println("$name  lite: ${lite}, jsonpath: ${other}     Without caches:  lite: ${liteNoCache}, jsonpath: ${otherNoCache}")
+                println("$name  kt: ${kt}, jsonpath: ${other}     Without caches:  kt: ${ktNoCache}, jsonpath: ${otherNoCache}")
             }
         }
 

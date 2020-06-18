@@ -1,7 +1,7 @@
-# JsonPathLite
-[![Build Status](https://travis-ci.com/codeniko/JsonPathLite.svg?branch=master)](https://travis-ci.com/codeniko/JsonPathLite)
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.nfeld.jsonpathlite/json-path-lite/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.nfeld.jsonpathlite/json-path-lite)
-[![codecov](https://codecov.io/gh/codeniko/JsonPathLite/branch/master/graph/badge.svg)](https://codecov.io/gh/codeniko/JsonPathLite)
+# JsonPathKt
+[![Build Status](https://travis-ci.com/codeniko/JsonPathKt.svg?branch=master)](https://travis-ci.com/codeniko/JsonPathKt)
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.nfeld.jsonpathkt/jsonpathkt/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.nfeld.jsonpathkt/jsonpathkt)
+[![codecov](https://codecov.io/gh/codeniko/JsonPathKt/branch/master/graph/badge.svg)](https://codecov.io/gh/codeniko/JsonPathKt)
 
 **A lighter and more efficient implementation of JsonPath in Kotlin.**
 With functional programming aspects found in langauges like Kotlin, Scala, and streams/lambdas in Java8, this
@@ -9,7 +9,7 @@ library simplifies other implementations like [Jayway's JsonPath](https://github
 *filter operations* and *in-path functions* to focus on what matters most: modern fast value extractions from JSON objects. 
 Up to **2x more efficient** in most cases; see [Benchmarks](#benchmarks).
 
-In order to make the library functional programming friendly, JsonPathLite returns `null` instead of throwing exceptions 
+In order to make the library functional programming friendly, JsonPathKt returns `null` instead of throwing exceptions 
 while evaluating a path against a JSON object. Throwing exceptions breaks flow control and should be reserved for exceptional 
 errors only.
 
@@ -27,7 +27,7 @@ val json = """{"list": ["a","b","c","d"]}"""
 JsonPath.parse(json)?.read<List<String>>("$.list[1:3]") // returns listOf("b", "c")
 ```
 
-JsonPathLite also works with `Map` and POJO.
+JsonPathKt also works with `Map` and POJO.
 ```kotlin
 val json = """[{ "outer": {"inner": 1} }]"""
 JsonPath.parse(json)?.read<Map<String, Int>>("$[0].outer") // returns mapOf("inner" to 1)
@@ -42,18 +42,18 @@ jsonpath.readFromJson<List<Map<String, String>>>(json1)
 jsonpath.readFromJson<List<Map<String, String>>>(json2)
 ```
 
-*JsonPathLite uses [Jackson](https://github.com/FasterXML/jackson) to deserialize JSON strings. `JsonPath.parse` returns a Jackson 
+*JsonPathKt uses [Jackson](https://github.com/FasterXML/jackson) to deserialize JSON strings. `JsonPath.parse` returns a Jackson 
 `JsonNode` object, so if you've already deserialized, you can also `read` the jsonpath value directly.*
 
 
 ## Getting started
-JsonPathLite is available at the Maven Central repository.
+JsonPathKt is available at the Maven Central repository.
 
 **POM**
 ```xml
 <dependency>
-  <groupId>com.nfeld.jsonpathlite</groupId>
-  <artifactId>json-path-lite</artifactId>
+  <groupId>com.nfeld.jsonpathkt</groupId>
+  <artifactId>jsonpathkt</artifactId>
   <version>2.0.0</version>
 </dependency>
 ```
@@ -61,7 +61,7 @@ JsonPathLite is available at the Maven Central repository.
 **Gradle**
 ```gradle
 dependencies {
-    implementation 'com.nfeld.jsonpathlite:json-path-lite:2.0.0'
+    implementation 'com.nfeld.jsonpathkt:jsonpathkt:2.0.0'
 }
 ```
 
@@ -77,7 +77,7 @@ dependencies {
 | `[start:end]`             | JSON array range accessor from start (inclusive) to end (exclusive)|
 
 ## Path expression examples
-JsonPathLite expressions can use any combination of dot–notation and bracket–notation operators to access JSON values. For examples, these all evaluate to the same result:
+JsonPathKt expressions can use any combination of dot–notation and bracket–notation operators to access JSON values. For examples, these all evaluate to the same result:
 ```text
 $.family.children[0].name
 $['family']['children'][0]['name']
@@ -130,11 +130,11 @@ Given the JSON:
 | $.family.children[0].*    |  Names & age values of first child |
 
 ## Benchmarks
-These are benchmark tests of JsonPathLite against Jayway's JsonPath implementation. Results for each test is the average of 30 runs with 80,000 reads per run. You can run these test locally with `./runBenchmarks.sh`
+These are benchmark tests of JsonPathKt against Jayway's JsonPath implementation. Results for each test is the average of 30 runs with 80,000 reads per run. You can run these test locally with `./runBenchmarks.sh`
 
 **Evaluating/reading path against large JSON**
 
-| Path Tested | JsonPathLite (ms) | JsonPath (ms) |
+| Path Tested | JsonPathKt (ms) | JsonPath (ms) |
 | :---------- | :------ | :----- |
 |  $[0]['tags'][3:]  |  72 ms *(53 ms w/ cache)* |  107 ms *(70 ms w/ cache)*  |
 |  $[0]['tags'][0,3,5]  |  67 ms *(30 ms w/ cache)* |  121 ms *(50 ms w/ cache)*  |
@@ -154,7 +154,7 @@ These are benchmark tests of JsonPathLite against Jayway's JsonPath implementati
 
 **Compiling JsonPath string to internal tokens**
 
-| Path size | JsonPathLite | JsonPath |
+| Path size | JsonPathKt | JsonPath |
 | :-------- | :----------- | :------- |
 |  7 chars, 1 tokens  |  9 ms *(2 ms w/ cache)* |  10 ms *(9 ms w/ cache)* |
 |  16 chars, 3 tokens  |  22 ms *(2 ms w/ cache)* |  27 ms *(27 ms w/ cache)* |
@@ -163,7 +163,7 @@ These are benchmark tests of JsonPathLite against Jayway's JsonPath implementati
 |  88 chars, 19 tokens  |  133 ms *(2 ms w/ cache)* |  214 ms *(214 ms w/ cache)* |
 
 # Cache
-JsonPathLite uses an LRU cache by default to cache compiled JsonPath tokens. If you don't want to use the cache, you can disable it or set the CacheProvider to use your own implementation of the Cache interface.
+JsonPathKt uses an LRU cache by default to cache compiled JsonPath tokens. If you don't want to use the cache, you can disable it or set the CacheProvider to use your own implementation of the Cache interface.
 ```kotlin
 // Disable cache
 CacheProvider.setCache(null)
@@ -175,4 +175,4 @@ CacheProvider.setCache(object : Cache {
 })
 ```
 
-[![Analytics](https://ga-beacon.appspot.com/UA-116910991-3/jsonpathlite/index)](https://github.com/igrigorik/ga-beacon)
+[![Analytics](https://ga-beacon.appspot.com/UA-116910991-3/jsonpathkt/index)](https://github.com/igrigorik/ga-beacon)

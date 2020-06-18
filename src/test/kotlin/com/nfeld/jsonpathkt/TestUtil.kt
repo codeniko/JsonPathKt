@@ -1,9 +1,9 @@
-package com.nfeld.jsonpathlite
+package com.nfeld.jsonpathkt
 
 import com.jayway.jsonpath.Configuration
 import com.jayway.jsonpath.spi.json.JacksonJsonProvider
-import com.nfeld.jsonpathlite.cache.CacheProvider
-import com.nfeld.jsonpathlite.util.JacksonUtil
+import com.nfeld.jsonpathkt.cache.CacheProvider
+import com.nfeld.jsonpathkt.util.JacksonUtil
 
 fun readTree(json: String) = JacksonUtil.mapper.readTree(json)
 

@@ -1,11 +1,11 @@
-package com.nfeld.jsonpathlite.extension
+package com.nfeld.jsonpathkt.extension
 
-import com.nfeld.jsonpathlite.JsonPath
-import com.nfeld.jsonpathlite.SMALL_JSON
-import com.nfeld.jsonpathlite.SMALL_JSON_ARRAY
-import com.nfeld.jsonpathlite.readTree
-import com.nfeld.jsonpathlite.util.RootLevelArrayNode
-import com.nfeld.jsonpathlite.util.createArrayNode
+import com.nfeld.jsonpathkt.JsonPath
+import com.nfeld.jsonpathkt.SMALL_JSON
+import com.nfeld.jsonpathkt.SMALL_JSON_ARRAY
+import com.nfeld.jsonpathkt.readTree
+import com.nfeld.jsonpathkt.util.RootLevelArrayNode
+import com.nfeld.jsonpathkt.util.createArrayNode
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe

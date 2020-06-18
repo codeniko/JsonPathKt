@@ -31,7 +31,7 @@ task benchmark(type: Test) {
             readmeFormat = false
         }
         filter {
-            include("com/nfeld/jsonpathlite/BenchmarkTest.class")
+            include("com/nfeld/jsonpathkt/BenchmarkTest.class")
         }
         testLogging {
             showStandardStreams = true
@@ -48,7 +48,7 @@ task perfTest(type: Test) {
 
     doFirst {
         filter {
-            include("com/nfeld/jsonpathlite/PerfTest.class")
+            include("com/nfeld/jsonpathkt/PerfTest.class")
         }
         testLogging {
             // show test results for following events
@@ -69,10 +69,10 @@ test {
 
     doFirst {
         filter {
-            includeTestsMatching("com.nfeld.jsonpathlite.*")
+            includeTestsMatching("com.nfeld.jsonpathkt.*")
             exclude(
-                    "com/nfeld/jsonpathlite/BenchmarkTest.class",
-                    "com/nfeld/jsonpathlite/PerfTest.class"
+                    "com/nfeld/jsonpathkt/BenchmarkTest.class",
+                    "com/nfeld/jsonpathkt/PerfTest.class"
             )
         }
 

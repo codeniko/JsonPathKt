@@ -1,7 +1,7 @@
 #!/bin/bash
 
-FILE=/tmp/jsonpathlite
-FILE2=/tmp/jsonpathlite2
+FILE=/tmp/jsonpathkt
+FILE2=/tmp/jsonpathkt2
 ./gradlew benchmark -DreadmeFormat > "$FILE"
 if [ $? -eq 0 ]; then
   cat "$FILE" | sed 's/^ *//' | grep '^|' > "$FILE2"

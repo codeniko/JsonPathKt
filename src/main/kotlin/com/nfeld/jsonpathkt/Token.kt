@@ -1,13 +1,13 @@
-package com.nfeld.jsonpathlite
+package com.nfeld.jsonpathkt
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.ArrayNode
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.fasterxml.jackson.databind.node.TextNode
-import com.nfeld.jsonpathlite.extension.getValueIfNotNullOrMissing
-import com.nfeld.jsonpathlite.extension.isNotNullOrMissing
-import com.nfeld.jsonpathlite.util.RootLevelArrayNode
-import com.nfeld.jsonpathlite.util.createArrayNode
+import com.nfeld.jsonpathkt.extension.getValueIfNotNullOrMissing
+import com.nfeld.jsonpathkt.extension.isNotNullOrMissing
+import com.nfeld.jsonpathkt.util.RootLevelArrayNode
+import com.nfeld.jsonpathkt.util.createArrayNode
 
 /**
  * Accesses value at [index] from [ArrayNode]

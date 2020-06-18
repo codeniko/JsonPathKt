@@ -1,6 +1,6 @@
-package com.nfeld.jsonpathlite
+package com.nfeld.jsonpathkt
 
-import com.nfeld.jsonpathlite.cache.CacheProvider
+import com.nfeld.jsonpathkt.cache.CacheProvider
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.Assertions.assertEquals

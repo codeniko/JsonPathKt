@@ -1,12 +1,12 @@
-package com.nfeld.jsonpathlite
+package com.nfeld.jsonpathkt
 
 import com.fasterxml.jackson.databind.node.ArrayNode
 import com.fasterxml.jackson.databind.node.BooleanNode
 import com.fasterxml.jackson.databind.node.TextNode
-import com.nfeld.jsonpathlite.cache.CacheProvider
-import com.nfeld.jsonpathlite.util.RootLevelArrayNode
-import com.nfeld.jsonpathlite.util.createArrayNode
-import com.nfeld.jsonpathlite.util.createObjectNode
+import com.nfeld.jsonpathkt.cache.CacheProvider
+import com.nfeld.jsonpathkt.util.RootLevelArrayNode
+import com.nfeld.jsonpathkt.util.createArrayNode
+import com.nfeld.jsonpathkt.util.createObjectNode
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.Assertions.assertEquals

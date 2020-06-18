@@ -1,10 +1,10 @@
-package com.nfeld.jsonpathlite
+package com.nfeld.jsonpathkt
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.*
-import com.nfeld.jsonpathlite.cache.CacheProvider
-import com.nfeld.jsonpathlite.extension.read
-import com.nfeld.jsonpathlite.util.JacksonUtil
+import com.nfeld.jsonpathkt.cache.CacheProvider
+import com.nfeld.jsonpathkt.extension.read
+import com.nfeld.jsonpathkt.util.JacksonUtil
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
 

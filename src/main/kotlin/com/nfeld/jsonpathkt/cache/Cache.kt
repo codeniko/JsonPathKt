@@ -1,6 +1,6 @@
-package com.nfeld.jsonpathlite.cache
+package com.nfeld.jsonpathkt.cache
 
-import com.nfeld.jsonpathlite.JsonPath
+import com.nfeld.jsonpathkt.JsonPath
 
 interface Cache {
     /**
