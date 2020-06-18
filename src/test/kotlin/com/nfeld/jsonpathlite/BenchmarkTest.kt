@@ -30,12 +30,14 @@ private fun benchmark(callsPerRun: Int = DEFAULT_CALLS_PER_RUN, runs: Int = DEFA
 
 private fun benchmarkJsonPathLite(path: String, callsPerRun: Int = DEFAULT_CALLS_PER_RUN, runs: Int = DEFAULT_RUNS): Long {
     val json = JsonPath.parse(LARGE_JSON)!! // pre-parse json
+//    println("our    result: " + JsonPath(path).readFromJson<Any>(json).toString())
     return benchmark(callsPerRun, runs) { JsonPath(path).readFromJson<Any>(json) }
 }
 
 private fun benchmarkJsonPath(path: String, callsPerRun: Int = DEFAULT_CALLS_PER_RUN, runs: Int = DEFAULT_RUNS): Long {
     val jaywayConfig = Configuration.defaultConfiguration().jsonProvider(JacksonJsonProvider())
     val documentContext = com.jayway.jsonpath.JsonPath.parse(LARGE_JSON, jaywayConfig) // pre-parse json
+//    println("jayway result: " + documentContext.read<Any>(path).toString())
     return benchmark(callsPerRun, runs) { documentContext.read<Any>(path) }
 }
 

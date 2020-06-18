@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.node.ArrayNode
 import com.fasterxml.jackson.databind.node.BooleanNode
 import com.fasterxml.jackson.databind.node.TextNode
 import com.nfeld.jsonpathlite.cache.CacheProvider
-import com.nfeld.jsonpathlite.util.JacksonUtil
 import com.nfeld.jsonpathlite.util.RootLevelArrayNode
 import com.nfeld.jsonpathlite.util.createArrayNode
 import com.nfeld.jsonpathlite.util.createObjectNode
@@ -83,10 +82,16 @@ class TokenTest : DescribeSpec({
             }
 
             it("should get specified items of sublists if node is a RootLevelArrayNode") {
-                val rootJson = readTree("[1,[2],[3,4],[5,6,7]]") as ArrayNode
-                MultiArrayAccessorToken(listOf(0, 1)).read(RootLevelArrayNode(rootJson)).toString() shouldBe "[2,3,4,5,6]"
-                MultiArrayAccessorToken(listOf(0, -1)).read(RootLevelArrayNode(rootJson)).toString() shouldBe "[2,2,3,4,5,7]"
-                MultiArrayAccessorToken(listOf(0, 0)).read(RootLevelArrayNode(rootJson)).toString() shouldBe "[2,2,3,3,5,5]"
+                val json = readTree("[1,[2],[3,4],[5,6,7]]") as ArrayNode
+                MultiArrayAccessorToken(listOf(0, 1)).read(RootLevelArrayNode(json)).toString() shouldBe "[2,3,4,5,6]"
+                MultiArrayAccessorToken(listOf(0, -1)).read(RootLevelArrayNode(json)).toString() shouldBe "[2,2,3,4,5,7]"
+            }
+
+            it("should be able to get same index multiple times") {
+                val json = readTree("[1,[2],[3,4],[5,6,7]]") as ArrayNode
+                MultiArrayAccessorToken(listOf(0, 0, 0)).read(json).toString() shouldBe "[1,1,1]"
+                MultiArrayAccessorToken(listOf(2, 2)).read(json).toString() shouldBe "[[3,4],[3,4]]"
+                MultiArrayAccessorToken(listOf(0, 0)).read(RootLevelArrayNode(json)).toString() shouldBe "[2,2,3,3,5,5]"
             }
 
             it("should get characters of a String at specified indices") {
@@ -114,6 +119,7 @@ class TokenTest : DescribeSpec({
 
             it("should handle different levels of list nesting") {
                 ArrayLengthBasedRangeAccessorToken(0, null, -1).read(readTree("""[1,[2],[3,4],[5,6,7]]""")).toString() shouldBe "[1,[2],[3,4]]"
+                ArrayLengthBasedRangeAccessorToken(0, null, 0).read(readTree("""[1,[2],[3,4],[5,6,7]]""")).toString() shouldBe "[1,[2],[3,4],[5,6,7]]"
                 ArrayLengthBasedRangeAccessorToken(0).read(WildcardToken().read(readTree("""[1,[2],[3,4],[5,6,7]]"""))!!).toString() shouldBe "[2,3,4,5,6,7]"
                 ArrayLengthBasedRangeAccessorToken(0, null, -1).read(WildcardToken().read(readTree("""[1,[2],[3,4],[5,6,7]]"""))!!).toString() shouldBe "[3,5,6]"
                 ArrayLengthBasedRangeAccessorToken(0, null, 0).read(WildcardToken().read(readTree("""[1,[2],[3,4],[5,6,7,[8,9,10,11]]]"""))!!).toString() shouldBe "[2,3,4,5,6,7,[8,9,10,11]]"

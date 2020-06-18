@@ -17,15 +17,30 @@ compileTestKotlin {
     kotlinOptions.jvmTarget = "1.8"
 }
 
-task benchmark {
-    doLast {
-        shouldBenchmark = true
+task benchmark(type: Test) {
+    // enable junit 5
+    useJUnitPlatform()
+
+    doFirst {
         if (!System.getProperty("readmeFormat", "false").equals("false")) {
             readmeFormat = true
         }
+
+        if (readmeFormat) {
+            jvmArgs '-DreadmeFormat=true'
+            readmeFormat = false
+        }
+        filter {
+            include("com/nfeld/jsonpathlite/BenchmarkTest.class")
+        }
+        testLogging {
+            showStandardStreams = true
+        }
     }
+
+    // Make this task never up to date, thus forcing rerun of all tests whenever task is run
+    outputs.upToDateWhen { false }
 }
-benchmark.finalizedBy(test)
 
 task perfTest(type: Test) {
     // enable junit 5
@@ -53,44 +68,30 @@ test {
     useJUnitPlatform()
 
     doFirst {
-        if (shouldBenchmark) {
-            if (readmeFormat) {
-                jvmArgs '-DreadmeFormat=true'
-                readmeFormat = false
-            }
-            filter {
-                includeTestsMatching("com.nfeld.jsonpathlite.*")
-                include("com/nfeld/jsonpathlite/BenchmarkTest.class")
-            }
-            testLogging {
-                showStandardStreams = true
-            }
-        } else {
-            filter {
-                includeTestsMatching("com.nfeld.jsonpathlite.*")
-                exclude(
-                        "com/nfeld/jsonpathlite/BenchmarkTest.class",
-                        "com/nfeld/jsonpathlite/PerfTest.class"
-                )
-            }
+        filter {
+            includeTestsMatching("com.nfeld.jsonpathlite.*")
+            exclude(
+                    "com/nfeld/jsonpathlite/BenchmarkTest.class",
+                    "com/nfeld/jsonpathlite/PerfTest.class"
+            )
+        }
 
-            testLogging {
-                // show test results for following events
-                events 'PASSED', 'FAILED', 'SKIPPED'
+        testLogging {
+            // show test results for following events
+            events 'PASSED', 'FAILED', 'SKIPPED'
 
-                // show printlines
-                showStandardStreams = true
-            }
+            // show printlines
+            showStandardStreams = true
+        }
 
-            // show test summary at end
-            afterSuite { desc, result ->
-                if (!desc.parent) {
-                    println "\nTest result: ${result.resultType}"
-                    println "Test summary: ${result.testCount} tests, " +
-                            "${result.successfulTestCount} succeeded, " +
-                            "${result.failedTestCount} failed, " +
-                            "${result.skippedTestCount} skipped"
-                }
+        // show test summary at end
+        afterSuite { desc, result ->
+            if (!desc.parent) {
+                println "\nTest result: ${result.resultType}"
+                println "Test summary: ${result.testCount} tests, " +
+                        "${result.successfulTestCount} succeeded, " +
+                        "${result.failedTestCount} failed, " +
+                        "${result.skippedTestCount} skipped"
             }
         }
     }
