@@ -352,9 +352,8 @@ internal data class DeepScanLengthBasedArrayAccessorToken(val startIndex: Int,
             }
             is ArrayNode -> {
                 ArrayLengthBasedRangeAccessorToken(startIndex, endIndex, offsetFromEnd)
-                    ?.read(node)
-                    ?.let { resultAny ->
-                        val resultArray = resultAny as? ArrayNode
+                    .read(node)?.let { resultNode ->
+                        val resultArray = resultNode as? ArrayNode
                         resultArray?.forEach { result.add(it) }
                     }
 
@@ -428,6 +427,51 @@ internal class WildcardToken : Token {
     override fun toString(): String = "WildcardToken"
     override fun hashCode(): Int = toString().hashCode()
     override fun equals(other: Any?): Boolean = other is WildcardToken
+}
+
+internal class DeepScanWildcardToken : Token {
+    private fun scan(node: JsonNode, result: ArrayNode) {
+        when (node) {
+            is RootLevelArrayNode -> {
+                // no need to add anything on root level, scan down next level
+                node.forEach {
+                    if (it.isNotNullOrMissing()) {
+                        scan(it, result)
+                    }
+                }
+            }
+            is ObjectNode,
+            is ArrayNode -> {
+                WildcardToken().read(node)?.let {
+                    if (it is ArrayNode) {
+                        it.forEach {
+                            if (it.isNotNullOrMissing()) {
+                                result.add(it)
+                            }
+                        }
+                    }
+                }
+
+                // now recursively scan underlying objects/arrays
+                node.forEach {
+                    if (it.isNotNullOrMissing()) {
+                        scan(it, result)
+                    }
+                }
+            }
+            else -> {}
+        }
+    }
+
+    override fun read(json: JsonNode): JsonNode? {
+        val result = RootLevelArrayNode()
+        scan(json, result)
+        return result
+    }
+
+    override fun toString(): String = "DeepScanWildcardToken"
+    override fun hashCode(): Int = toString().hashCode()
+    override fun equals(other: Any?): Boolean = other is DeepScanWildcardToken
 }
 
 interface Token {

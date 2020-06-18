@@ -521,6 +521,16 @@ class JsonPathTest : DescribeSpec({
             JsonPath.parse("""[[1], [2,3]]""")!!.read<JsonNode>("$.*").toString() shouldBe """[[1],[2,3]]"""
             JsonPath.parse("""[[1], [2,3]]""")!!.read<JsonNode>("$.*.*").toString() shouldBe """[1,2,3]"""
             JsonPath.parse("""[[1], [2,3]]""")!!.read<JsonNode>("$.*.*.*").toString() shouldBe """[]"""
+
+            JsonPath.parse("""[1,[2],[3,4],[5,6,7,[8,9,10,11]]]""")!!.read<JsonNode>("$.*").toString() shouldBe """[1,[2],[3,4],[5,6,7,[8,9,10,11]]]"""
+            JsonPath.parse("""[1,[2],[3,4],[5,6,7,[8,9,10,11]]]""")!!.read<JsonNode>("$.*.*").toString() shouldBe """[2,3,4,5,6,7,[8,9,10,11]]"""
+            JsonPath.parse("""[1,[2],[3,4],[5,6,7,[8,9,10,11]]]""")!!.read<JsonNode>("$.*.*.*").toString() shouldBe """[8,9,10,11]"""
+            JsonPath.parse("""[1,[2],[3,4],[5,6,7,[8,9,10,11]]]""")!!.read<JsonNode>("$.*.*.*.*").toString() shouldBe """[]"""
+
+            JsonPath.parse("""[1,[2],[3,4],[5,6,7,[8,9,10,11]]]""")!!.read<JsonNode>("$..*").toString() shouldBe """[1,[2],[3,4],[5,6,7,[8,9,10,11]],2,3,4,5,6,7,[8,9,10,11],8,9,10,11]"""
+            JsonPath.parse("""[1,[2],[3,4],[5,6,7,[8,9,10,11]]]""")!!.read<JsonNode>("$..[*]").toString() shouldBe """[1,[2],[3,4],[5,6,7,[8,9,10,11]],2,3,4,5,6,7,[8,9,10,11],8,9,10,11]"""
+            JsonPath.parse("""[1,[2],[3,4],[5,6,7,[8,9,10,11]]]""")!!.read<JsonNode>("$..*.*").toString() shouldBe """[2,3,4,5,6,7,[8,9,10,11],8,9,10,11]"""
+            JsonPath.parse("""[1,[2],[3,4],[5,6,7,[8,9,10,11]]]""")!!.read<JsonNode>("$..*..*").toString() shouldBe """[2,3,4,5,6,7,[8,9,10,11],8,9,10,11,8,9,10,11]"""
         }
 
         it("should handle lists properly") {

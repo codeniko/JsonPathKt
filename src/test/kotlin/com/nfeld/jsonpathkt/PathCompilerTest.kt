@@ -47,6 +47,10 @@ class PathCompilerTest : StringSpec({
         assertEquals(listOf(WildcardToken(), DeepScanObjectAccessorToken(listOf("key"))), f("$.*..key"))
         assertEquals(listOf(WildcardToken(), DeepScanArrayAccessorToken(listOf(1,2,3))), f("$.*..[1:4]"))
         f("""$..["key"]""") shouldBe listOf(DeepScanObjectAccessorToken(listOf("key")))
+        f("$..*") shouldBe listOf(DeepScanWildcardToken())
+        f("$..[*]") shouldBe listOf(DeepScanWildcardToken())
+        f("$..*..*") shouldBe listOf(DeepScanWildcardToken(), DeepScanWildcardToken())
+        f("$..[*]..[*]") shouldBe listOf(DeepScanWildcardToken(), DeepScanWildcardToken())
     }
 
     "should compile without root $ token" {

@@ -27,11 +27,13 @@ internal object PathCompiler {
 
         fun addObjectAccessorToken() {
             val key = keyBuilder.toString()
-            when {
-                isDeepScan -> tokens.add(DeepScanObjectAccessorToken(listOf(key)))
-                isWildcard -> tokens.add(WildcardToken())
-                else -> tokens.add(ObjectAccessorToken(key))
+            val token = when {
+                isDeepScan && isWildcard -> DeepScanWildcardToken()
+                isDeepScan -> DeepScanObjectAccessorToken(listOf(key))
+                isWildcard -> WildcardToken()
+                else -> ObjectAccessorToken(key)
             }
+            tokens.add(token)
         }
 
         val len = path.length
@@ -40,6 +42,9 @@ internal object PathCompiler {
             val c = path[i]
             val next = path.getOrNull(i + 1)
             when {
+                c == '*' && isDeepScan -> {
+                    isWildcard = true
+                }
                 c == '.' -> {
                     if (keyBuilder.isNotEmpty() || isWildcard) {
                         addObjectAccessorToken()
@@ -68,6 +73,7 @@ internal object PathCompiler {
                         val token = compileBracket(path, i, closingBracketIndex)
                         if (isDeepScan) {
                             val deepScanToken: Token? = when (token) {
+                                is WildcardToken -> DeepScanWildcardToken()
                                 is ObjectAccessorToken -> DeepScanObjectAccessorToken(listOf(token.key))
                                 is MultiObjectAccessorToken -> DeepScanObjectAccessorToken(token.keys)
                                 is ArrayAccessorToken -> DeepScanArrayAccessorToken(listOf(token.index))
