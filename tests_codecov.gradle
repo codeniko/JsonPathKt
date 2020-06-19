@@ -1,6 +1,5 @@
 
 ext {
-    shouldBenchmark = false
     readmeFormat = false // pass -DreadmeFormat to format benchmark results to update readme
     kotestVersion = '4.1.0.RC2'
 }
@@ -110,7 +109,7 @@ test {
 }
 
 jacoco {
-    toolVersion = "0.8.3"
+    toolVersion = "0.8.5"
     reportsDir = file("$buildDir/reports")
 }
 
@@ -135,7 +134,10 @@ jacocoTestReport {
     afterEvaluate {
         classDirectories = files(classDirectories.files.collect {
             // Exclude simple LinkedHashMap subclass from report
-            fileTree(dir: it, exclude: '**/LRUCache$LRUMap*')
+            fileTree(dir: it, excludes: [
+                    '**/LRUCache$LRUMap*',
+                    '**/JsonNodeKt*'
+            ])
         })
     }
 }

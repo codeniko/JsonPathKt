@@ -364,39 +364,16 @@ class TokenTest : DescribeSpec({
                 WildcardToken().toString() shouldBe "WildcardToken"
                 WildcardToken().hashCode() shouldBe "WildcardToken".hashCode()
                 WildcardToken().equals(WildcardToken()) shouldBe true
-                WildcardToken().equals(RootLevelArrayNode()) shouldBe false
+                WildcardToken().equals(ArrayAccessorToken(0)) shouldBe false
             }
         }
 
         describe("DeepScanWildcardToken") {
-            it("should handle empty cases") {
-                WildcardToken().read(createArrayNode()).toString() shouldBe """[]"""
-                WildcardToken().read(createObjectNode()).toString() shouldBe """[]"""
-            }
-
-            it("should get values from objects and strip") {
-                val objectNode = readTree("""{ "some": "string", "int": 42, "object": { "key": "value" }, "array": [0, 1] }""")
-                WildcardToken().read(objectNode).toString() shouldBe """["string",42,{"key":"value"},[0,1]]"""
-            }
-
-            it("should return a RootLevelArrayNode if root list replaced with another list before modifying values") {
-                val arrayNode = readTree("""["string", 42, { "key": "value" }, [0, 1] ]""")
-                WildcardToken().read(arrayNode).toString() shouldBe """["string",42,{"key":"value"},[0,1]]"""
-            }
-
-            it("should drop scalars and move everything down on root RootLevelArrayNode") {
-                val arrayNode = readTree("""["string", 42, { "key": "value" }, [0, 1] ]""")
-                val res1 = WildcardToken().read(arrayNode)
-                (res1 is RootLevelArrayNode) shouldBe true
-                val res2 = WildcardToken().read(res1!!)
-                res2.toString() shouldBe """["value",0,1]"""
-            }
-
             it("should override toString, hashCode, and equals") {
-                WildcardToken().toString() shouldBe "WildcardToken"
-                WildcardToken().hashCode() shouldBe "WildcardToken".hashCode()
-                WildcardToken().equals(WildcardToken()) shouldBe true
-                WildcardToken().equals(RootLevelArrayNode()) shouldBe false
+                DeepScanWildcardToken().toString() shouldBe "DeepScanWildcardToken"
+                DeepScanWildcardToken().hashCode() shouldBe "DeepScanWildcardToken".hashCode()
+                DeepScanWildcardToken().equals(DeepScanWildcardToken()) shouldBe true
+                DeepScanWildcardToken().equals(ArrayAccessorToken(0)) shouldBe false
             }
         }
     }
