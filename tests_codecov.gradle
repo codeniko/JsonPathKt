@@ -1,7 +1,7 @@
 
 ext {
     readmeFormat = false // pass -DreadmeFormat to format benchmark results to update readme
-    kotestVersion = '4.1.0.RC2'
+    kotestVersion = '4.6.4'
 }
 
 dependencies {
@@ -68,7 +68,6 @@ test {
 
     doFirst {
         filter {
-            includeTestsMatching("com.nfeld.jsonpathkt.*")
             exclude(
                     "com/nfeld/jsonpathkt/BenchmarkTest.class",
                     "com/nfeld/jsonpathkt/PerfTest.class"
