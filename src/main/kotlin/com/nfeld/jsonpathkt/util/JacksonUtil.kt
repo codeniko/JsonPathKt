@@ -2,13 +2,12 @@ package com.nfeld.jsonpathkt.util
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.SerializationFeature
-import com.fasterxml.jackson.module.kotlin.KotlinModule
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 
 object JacksonUtil {
     val mapper: ObjectMapper by lazy {
-        ObjectMapper()
+        jacksonObjectMapper()
             .configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true)
-            .registerModule(KotlinModule())
     }
 }
 

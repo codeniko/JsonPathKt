@@ -1,5 +1,13 @@
+// apply plugin: 'maven'
+apply plugin: 'signing'
 
 def publishLocal = true
+
+configurations {
+    archives {
+        extendsFrom configurations.default
+    }
+}
 
 task sourceJar(type: Jar) {
     classifier "sources"
@@ -8,6 +16,11 @@ task sourceJar(type: Jar) {
 
 artifacts {
     archives jar, sourceJar
+}
+
+signing {
+    required { !snapshotVersion && gradle.taskGraph.hasTask("uploadArchives") }
+    sign configurations.archives
 }
 
 publishing {
@@ -33,6 +46,7 @@ publishing {
                     developer {
                         id = 'codeniko'
                         name = 'Nikolay Feldman'
+                        url = 'https://www.nfeld.com'
                     }
                 }
                 scm {
@@ -105,7 +119,3 @@ if (!publishLocal) {
     }
 }
 
-signing {
-    required { !snapshotVersion && gradle.taskGraph.hasTask("uploadArchives") }
-    sign configurations.archives
-}
