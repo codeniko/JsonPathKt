@@ -13,7 +13,7 @@ ext {
 }
 
 group 'com.nfeld.jsonpathkt'
-version = '2.0.0' + (snapshotVersion ? "-SNAPSHOT" : "")
+version = '2.0.1' + (snapshotVersion ? "-SNAPSHOT" : "")
 
 repositories {
     mavenCentral()
