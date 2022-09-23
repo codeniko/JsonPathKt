@@ -7,7 +7,6 @@ import com.fasterxml.jackson.databind.node.TextNode
 import com.nfeld.jsonpathkt.extension.getValueIfNotNullOrMissing
 import com.nfeld.jsonpathkt.extension.isNotNullOrMissing
 import com.nfeld.jsonpathkt.util.RootLevelArrayNode
-import com.nfeld.jsonpathkt.util.createArrayNode
 
 /**
  * Accesses value at [index] from [ArrayNode]
@@ -45,7 +44,7 @@ internal data class ArrayAccessorToken(val index: Int) : Token {
                         if (indexFromLast >= 0 && indexFromLast < str.length) {
                             return TextNode(str[indexFromLast].toString())
                         } else null
-                    } else if (index >= 0 && index < str.length) {
+                    } else if (index < str.length) {
                         TextNode(str[index].toString())
                     } else null
                 }
@@ -72,14 +71,14 @@ internal data class ArrayAccessorToken(val index: Int) : Token {
  * @param indices indices to access, can be negative which means to access from end
  */
 internal data class MultiArrayAccessorToken(val indices: List<Int>) : Token {
-    override fun read(json: JsonNode): JsonNode? {
+    override fun read(json: JsonNode): JsonNode {
         val result = RootLevelArrayNode()
         when (json) {
             is RootLevelArrayNode -> {
                 // needs to be flattened, thus we iterate for each subnode before passing the reading down
                 json.forEach { node ->
-                    indices.forEach {
-                        ArrayAccessorToken.read(node, it)?.let {
+                    indices.forEach { index ->
+                        ArrayAccessorToken.read(node, index)?.let {
                             if (it.isNotNullOrMissing()) {
                                 result.add(it)
                             }
@@ -88,8 +87,8 @@ internal data class MultiArrayAccessorToken(val indices: List<Int>) : Token {
                 }
             }
             else -> {
-                indices.forEach {
-                    ArrayAccessorToken.read(json, it)?.let {
+                indices.forEach { index ->
+                    ArrayAccessorToken.read(json, index)?.let {
                         if (it.isNotNullOrMissing()) {
                             result.add(it)
                         }
@@ -112,20 +111,16 @@ internal data class MultiArrayAccessorToken(val indices: List<Int>) : Token {
 internal data class ArrayLengthBasedRangeAccessorToken(val startIndex: Int,
                                                        val endIndex: Int? = null,
                                                        val offsetFromEnd: Int = 0) : Token {
-    override fun read(json: JsonNode): JsonNode? {
+    override fun read(json: JsonNode): JsonNode {
         val token = when (json) {
             is RootLevelArrayNode -> {
                 val result = RootLevelArrayNode()
                 json.forEach { node ->
-                    read(node)?.let {
-                        // needs to be flattened so we add each underlying result to our result
-                        if (it is ArrayNode) {
-                            it.forEach {
-                                result.add(it)
-                            }
-                        } else if (it.isNotNullOrMissing()) {
-                            result.add(it)
-                        } else null
+                    when(val nextNode = read(node)) {
+                        is ArrayNode -> nextNode.forEach(result::add)
+                        else -> when {
+                            nextNode.isNotNullOrMissing() -> result.add(nextNode)
+                        }
                     }
                 }
                 return result
@@ -151,7 +146,7 @@ internal data class ArrayLengthBasedRangeAccessorToken(val startIndex: Int,
             endIndex - 1
         } else size + offsetFromEnd - 1
 
-        return if (start >= 0 && endInclusive >= start) {
+        return if (start in 0..endInclusive) {
             MultiArrayAccessorToken(IntRange(start, endInclusive).toList())
         } else null
     }
@@ -160,7 +155,7 @@ internal data class ArrayLengthBasedRangeAccessorToken(val startIndex: Int,
 /**
  * Accesses value at [key] from [ObjectNode]
  *
- * @param index index to access, can be negative which means to access from end
+ * @param key key to access
  */
 internal data class ObjectAccessorToken(val key: String) : Token {
     override fun read(json: JsonNode): JsonNode? {
@@ -174,9 +169,9 @@ internal data class ObjectAccessorToken(val key: String) : Token {
                 is RootLevelArrayNode -> {
                     // we're at root level and can get children from objects
                     val result = RootLevelArrayNode()
-                    json.forEach {
-                        (it as? ObjectNode)?.let { obj ->
-                            obj.getValueIfNotNullOrMissing(key)?.let { result.add(it) }
+                    json.forEach { node ->
+                        if(node is ObjectNode) {
+                            node.getValueIfNotNullOrMissing(key)?.let { result.add(it) }
                         }
                     }
                     result
@@ -196,14 +191,14 @@ internal data class ObjectAccessorToken(val key: String) : Token {
  * @param keys keys to access for which key/values to return
  */
 internal data class MultiObjectAccessorToken(val keys: List<String>) : Token {
-    override fun read(json: JsonNode): JsonNode? {
+    override fun read(json: JsonNode): JsonNode {
 
         return when (json) {
             is ObjectNode -> {
                 // Going from an object to a list always creates a root level list
                 val result = RootLevelArrayNode()
                 keys.forEach {
-                    json.getValueIfNotNullOrMissing(it)?.let { result.add(it) }
+                    json.getValueIfNotNullOrMissing(it)?.let(result::add)
                 }
                 result
             }
@@ -261,7 +256,7 @@ internal data class DeepScanObjectAccessorToken(val targetKeys: List<String>) : 
         }
     }
 
-    override fun read(json: JsonNode): JsonNode? {
+    override fun read(json: JsonNode): JsonNode {
         val result = RootLevelArrayNode()
         scan(json, result)
         return result
@@ -313,7 +308,7 @@ internal data class DeepScanArrayAccessorToken(val indices: List<Int>) : Token {
         }
     }
 
-    override fun read(json: JsonNode): JsonNode? {
+    override fun read(json: JsonNode): JsonNode {
         val result = RootLevelArrayNode()
         scan(json, result)
         return result
@@ -352,7 +347,7 @@ internal data class DeepScanLengthBasedArrayAccessorToken(val startIndex: Int,
             }
             is ArrayNode -> {
                 ArrayLengthBasedRangeAccessorToken(startIndex, endIndex, offsetFromEnd)
-                    .read(node)?.let { resultNode ->
+                    .read(node).let { resultNode ->
                         val resultArray = resultNode as? ArrayNode
                         resultArray?.forEach { result.add(it) }
                     }
@@ -368,7 +363,7 @@ internal data class DeepScanLengthBasedArrayAccessorToken(val startIndex: Int,
         }
     }
 
-    override fun read(json: JsonNode): JsonNode? {
+    override fun read(json: JsonNode): JsonNode {
         val result = RootLevelArrayNode()
         scan(json, result)
         return result
@@ -379,7 +374,7 @@ internal data class DeepScanLengthBasedArrayAccessorToken(val startIndex: Int,
  * Returns all values from an Object, or the same list
  */
 internal class WildcardToken : Token {
-    override fun read(json: JsonNode): JsonNode? {
+    override fun read(json: JsonNode): JsonNode {
         return when (json) {
             is ObjectNode -> {
                 val result = RootLevelArrayNode()
@@ -442,9 +437,9 @@ internal class DeepScanWildcardToken : Token {
             }
             is ObjectNode,
             is ArrayNode -> {
-                WildcardToken().read(node)?.let {
-                    if (it is ArrayNode) {
-                        it.forEach {
+                WildcardToken().read(node).let { nextNode ->
+                    if (nextNode is ArrayNode) {
+                        nextNode.forEach {
                             if (it.isNotNullOrMissing()) {
                                 result.add(it)
                             }
@@ -463,7 +458,7 @@ internal class DeepScanWildcardToken : Token {
         }
     }
 
-    override fun read(json: JsonNode): JsonNode? {
+    override fun read(json: JsonNode): JsonNode {
         val result = RootLevelArrayNode()
         scan(json, result)
         return result

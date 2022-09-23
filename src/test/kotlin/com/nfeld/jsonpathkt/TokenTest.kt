@@ -9,6 +9,7 @@ import com.nfeld.jsonpathkt.util.createArrayNode
 import com.nfeld.jsonpathkt.util.createObjectNode
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 import org.junit.jupiter.api.Assertions.assertEquals
 
 private fun printTesting(subpath: String) {
@@ -64,15 +65,15 @@ class TokenTest : DescribeSpec({
             }
 
             it("should get specified character of every String in RootLevelArrayNode") {
-                ArrayAccessorToken(1).read(WildcardToken().read(readTree("""["hello","world"]"""))!!).toString() shouldBe """["e","o"]"""
-                ArrayAccessorToken(-1).read(WildcardToken().read(readTree("""["hello","world"]"""))!!).toString() shouldBe """["o","d"]"""
-                ArrayAccessorToken(-4).read(WildcardToken().read(readTree("""["h","world"]"""))!!).toString() shouldBe """["o"]"""
+                ArrayAccessorToken(1).read(WildcardToken().read(readTree("""["hello","world"]"""))).toString() shouldBe """["e","o"]"""
+                ArrayAccessorToken(-1).read(WildcardToken().read(readTree("""["hello","world"]"""))).toString() shouldBe """["o","d"]"""
+                ArrayAccessorToken(-4).read(WildcardToken().read(readTree("""["h","world"]"""))).toString() shouldBe """["o"]"""
             }
         }
 
         describe("MultiArrayAccessorToken") {
             it("should get items at specified indices") {
-                MultiArrayAccessorToken(listOf(0, 1)).read(createObjectNode())?.toString() shouldBe "[]"
+                MultiArrayAccessorToken(listOf(0, 1)).read(createObjectNode()).toString() shouldBe "[]"
 
                 val expected = createArrayNode().apply {
                     add(1)
@@ -103,13 +104,13 @@ class TokenTest : DescribeSpec({
             }
 
             it("should get specified characters of every String in RootLevelArrayNode") {
-                MultiArrayAccessorToken(listOf(0,1)).read(WildcardToken().read(readTree("""["hello","world"]"""))!!).toString() shouldBe """["h","e","w","o"]"""
+                MultiArrayAccessorToken(listOf(0,1)).read(WildcardToken().read(readTree("""["hello","world"]"""))).toString() shouldBe """["h","e","w","o"]"""
             }
         }
 
         describe("ArrayLengthBasedRangeAccessorToken") {
             it("should return empty list") {
-                ArrayLengthBasedRangeAccessorToken(0).read(createObjectNode())?.toString() shouldBe "[]"
+                ArrayLengthBasedRangeAccessorToken(0).read(createObjectNode()).toString() shouldBe "[]"
             }
 
             it("should not get characters of a String") {
@@ -117,22 +118,22 @@ class TokenTest : DescribeSpec({
             }
 
             it("should not get characters of every String in RootLevelArrayNode") {
-                ArrayLengthBasedRangeAccessorToken(0,2).read(WildcardToken().read(readTree("""["hello","world"]"""))!!).toString() shouldBe "[]"
-                ArrayLengthBasedRangeAccessorToken(2,null, -1).read(WildcardToken().read(readTree("""["hello","world"]"""))!!).toString() shouldBe "[]"
+                ArrayLengthBasedRangeAccessorToken(0,2).read(WildcardToken().read(readTree("""["hello","world"]"""))).toString() shouldBe "[]"
+                ArrayLengthBasedRangeAccessorToken(2,null, -1).read(WildcardToken().read(readTree("""["hello","world"]"""))).toString() shouldBe "[]"
             }
 
             it("should handle objects in RootLevelArrayNode") {
-                ArrayLengthBasedRangeAccessorToken(0, 1).read(WildcardToken().read(readTree("""[{"a":1,"b":{"c":2,"d":3},"e":4}]"""))!!).toString() shouldBe "[]"
-                ArrayLengthBasedRangeAccessorToken(0, -1).read(WildcardToken().read(readTree("""[{"a":1,"b":{"c":2,"d":3},"e":4}]"""))!!).toString() shouldBe "[]"
-                ArrayLengthBasedRangeAccessorToken(0, -1).read(WildcardToken().read(readTree("""[{"p":true},{"a":1,"b":{"c":2,"d":3},"e":4}]"""))!!).toString() shouldBe "[]"
+                ArrayLengthBasedRangeAccessorToken(0, 1).read(WildcardToken().read(readTree("""[{"a":1,"b":{"c":2,"d":3},"e":4}]"""))).toString() shouldBe "[]"
+                ArrayLengthBasedRangeAccessorToken(0, -1).read(WildcardToken().read(readTree("""[{"a":1,"b":{"c":2,"d":3},"e":4}]"""))).toString() shouldBe "[]"
+                ArrayLengthBasedRangeAccessorToken(0, -1).read(WildcardToken().read(readTree("""[{"p":true},{"a":1,"b":{"c":2,"d":3},"e":4}]"""))).toString() shouldBe "[]"
             }
 
             it("should handle different levels of list nesting") {
                 ArrayLengthBasedRangeAccessorToken(0, null, -1).read(readTree("""[1,[2],[3,4],[5,6,7]]""")).toString() shouldBe "[1,[2],[3,4]]"
                 ArrayLengthBasedRangeAccessorToken(0, null, 0).read(readTree("""[1,[2],[3,4],[5,6,7]]""")).toString() shouldBe "[1,[2],[3,4],[5,6,7]]"
-                ArrayLengthBasedRangeAccessorToken(0).read(WildcardToken().read(readTree("""[1,[2],[3,4],[5,6,7]]"""))!!).toString() shouldBe "[2,3,4,5,6,7]"
-                ArrayLengthBasedRangeAccessorToken(0, null, -1).read(WildcardToken().read(readTree("""[1,[2],[3,4],[5,6,7]]"""))!!).toString() shouldBe "[3,5,6]"
-                ArrayLengthBasedRangeAccessorToken(0, null, 0).read(WildcardToken().read(readTree("""[1,[2],[3,4],[5,6,7,[8,9,10,11]]]"""))!!).toString() shouldBe "[2,3,4,5,6,7,[8,9,10,11]]"
+                ArrayLengthBasedRangeAccessorToken(0).read(WildcardToken().read(readTree("""[1,[2],[3,4],[5,6,7]]"""))).toString() shouldBe "[2,3,4,5,6,7]"
+                ArrayLengthBasedRangeAccessorToken(0, null, -1).read(WildcardToken().read(readTree("""[1,[2],[3,4],[5,6,7]]"""))).toString() shouldBe "[3,5,6]"
+                ArrayLengthBasedRangeAccessorToken(0, null, 0).read(WildcardToken().read(readTree("""[1,[2],[3,4],[5,6,7,[8,9,10,11]]]"""))).toString() shouldBe "[2,3,4,5,6,7,[8,9,10,11]]"
             }
 
             it("to MultiArrayAccessorToken general cases") {
@@ -235,15 +236,15 @@ class TokenTest : DescribeSpec({
             it("should handle different levels of list nesting") {
                 DeepScanLengthBasedArrayAccessorToken(0, null, 0).read(readTree("""[1,[2],[3,4],[5,6,7]]""")).toString() shouldBe "[1,[2],[3,4],[5,6,7],2,3,4,5,6,7]"
                 DeepScanLengthBasedArrayAccessorToken(0, null, -1).read(readTree("""[1,[2],[3,4],[5,6,7]]""")).toString() shouldBe "[1,[2],[3,4],3,5,6]"
-                DeepScanLengthBasedArrayAccessorToken(0, null, 0).read(WildcardToken().read(readTree("""[1,[2],[3,4],[5,6,7]]"""))!!).toString() shouldBe "[2,3,4,5,6,7]"
-                DeepScanLengthBasedArrayAccessorToken(0, null, -1).read(WildcardToken().read(readTree("""[1,[2],[3,4],[5,6,7]]"""))!!).toString() shouldBe "[3,5,6]"
-                DeepScanLengthBasedArrayAccessorToken(0, null, 0).read(WildcardToken().read(readTree("""[1,[2],[3,4],[5,6,7,[8,9,10,11]]]"""))!!).toString() shouldBe "[2,3,4,5,6,7,[8,9,10,11],8,9,10,11]"
+                DeepScanLengthBasedArrayAccessorToken(0, null, 0).read(WildcardToken().read(readTree("""[1,[2],[3,4],[5,6,7]]"""))).toString() shouldBe "[2,3,4,5,6,7]"
+                DeepScanLengthBasedArrayAccessorToken(0, null, -1).read(WildcardToken().read(readTree("""[1,[2],[3,4],[5,6,7]]"""))).toString() shouldBe "[3,5,6]"
+                DeepScanLengthBasedArrayAccessorToken(0, null, 0).read(WildcardToken().read(readTree("""[1,[2],[3,4],[5,6,7,[8,9,10,11]]]"""))).toString() shouldBe "[2,3,4,5,6,7,[8,9,10,11],8,9,10,11]"
             }
         }
 
         describe("ObjectAccessorToken") {
-            val objJson = readTree("""{"key":1}""")!!
-            val arrJson = readTree("""[{"key":1}]""")!!
+            val objJson = readTree("""{"key":1}""")
+            val arrJson = readTree("""[{"key":1}]""")
             // object accessor on an array should return list
 
             it("should get value from key if it exists") {
@@ -259,7 +260,7 @@ class TokenTest : DescribeSpec({
             }
 
             it("should get value from key if node is a RootLevelArrayNode") {
-                val rootJson = WildcardToken().read(arrJson)!! // should not be null
+                val rootJson = WildcardToken().read(arrJson) // should not be null
                 ObjectAccessorToken("key").read(rootJson).toString() shouldBe "[1]" // list since it was root level
             }
         }
@@ -304,9 +305,9 @@ class TokenTest : DescribeSpec({
                 DeepScanObjectAccessorToken(listOf("a")).read(json).toString() shouldBe """[1,2,4,6]"""
                 DeepScanObjectAccessorToken(listOf("c")).read(json).toString() shouldBe """[{"a":6,"b":7,"c":8},8]"""
                 DeepScanObjectAccessorToken(listOf("a","c")).read(json).toString() shouldBe """[1,2,4,{"a":6,"b":7,"c":8},6,8]"""
-                DeepScanObjectAccessorToken(listOf("a")).read(WildcardToken().read(json)!!).toString() shouldBe """[1,2,4,6]"""
-                DeepScanObjectAccessorToken(listOf("c")).read(WildcardToken().read(json)!!).toString() shouldBe """[{"a":6,"b":7,"c":8},8]"""
-                DeepScanObjectAccessorToken(listOf("a","c")).read(WildcardToken().read(json)!!).toString() shouldBe """[1,2,4,{"a":6,"b":7,"c":8},6,8]"""
+                DeepScanObjectAccessorToken(listOf("a")).read(WildcardToken().read(json)).toString() shouldBe """[1,2,4,6]"""
+                DeepScanObjectAccessorToken(listOf("c")).read(WildcardToken().read(json)).toString() shouldBe """[{"a":6,"b":7,"c":8},8]"""
+                DeepScanObjectAccessorToken(listOf("a","c")).read(WildcardToken().read(json)).toString() shouldBe """[1,2,4,{"a":6,"b":7,"c":8},6,8]"""
             }
         }
 
@@ -328,11 +329,11 @@ class TokenTest : DescribeSpec({
                 DeepScanArrayAccessorToken(listOf(0)).read(readTree("""[1,[2],[3,4],[5,6,7]]""")).toString() shouldBe "[1,2,3,5]"
                 DeepScanArrayAccessorToken(listOf(0, 1)).read(readTree("""[1,[2],[3,4],[5,6,7]]""")).toString() shouldBe "[1,[2],2,3,4,5,6]"
                 DeepScanArrayAccessorToken(listOf(0, -1)).read(readTree("""[1,[2],[3,4],[5,6,7]]""")).toString() shouldBe "[1,[5,6,7],2,2,3,4,5,7]"
-                DeepScanArrayAccessorToken(listOf(0)).read(WildcardToken().read(readTree("""[1,[2],[3,4],[5,6,7]]"""))!!).toString() shouldBe "[2,3,5]"
-                DeepScanArrayAccessorToken(listOf(0, 1)).read(WildcardToken().read(readTree("""[1,[2],[3,4],[5,6,7]]"""))!!).toString() shouldBe "[2,3,4,5,6]"
-                DeepScanArrayAccessorToken(listOf(0, -1)).read(WildcardToken().read(readTree("""[1,[2],[3,4],[5,6,7]]"""))!!).toString() shouldBe "[2,2,3,4,5,7]"
-                DeepScanArrayAccessorToken(listOf(0, 1)).read(WildcardToken().read(readTree("""[1,[2],[3,4],[5,6,7,[8,9,10,11]]]"""))!!).toString() shouldBe "[2,3,4,5,6,8,9]"
-                DeepScanArrayAccessorToken(listOf(0, -1)).read(WildcardToken().read(readTree("""[1,[2],[3,4],[5,6,7,[8,9,10,11]]]"""))!!).toString() shouldBe "[2,2,3,4,5,[8,9,10,11],8,11]"
+                DeepScanArrayAccessorToken(listOf(0)).read(WildcardToken().read(readTree("""[1,[2],[3,4],[5,6,7]]"""))).toString() shouldBe "[2,3,5]"
+                DeepScanArrayAccessorToken(listOf(0, 1)).read(WildcardToken().read(readTree("""[1,[2],[3,4],[5,6,7]]"""))).toString() shouldBe "[2,3,4,5,6]"
+                DeepScanArrayAccessorToken(listOf(0, -1)).read(WildcardToken().read(readTree("""[1,[2],[3,4],[5,6,7]]"""))).toString() shouldBe "[2,2,3,4,5,7]"
+                DeepScanArrayAccessorToken(listOf(0, 1)).read(WildcardToken().read(readTree("""[1,[2],[3,4],[5,6,7,[8,9,10,11]]]"""))).toString() shouldBe "[2,3,4,5,6,8,9]"
+                DeepScanArrayAccessorToken(listOf(0, -1)).read(WildcardToken().read(readTree("""[1,[2],[3,4],[5,6,7,[8,9,10,11]]]"""))).toString() shouldBe "[2,2,3,4,5,[8,9,10,11],8,11]"
             }
         }
 
@@ -356,15 +357,15 @@ class TokenTest : DescribeSpec({
                 val arrayNode = readTree("""["string", 42, { "key": "value" }, [0, 1] ]""")
                 val res1 = WildcardToken().read(arrayNode)
                 (res1 is RootLevelArrayNode) shouldBe true
-                val res2 = WildcardToken().read(res1!!)
+                val res2 = WildcardToken().read(res1)
                 res2.toString() shouldBe """["value",0,1]"""
             }
 
             it("should override toString, hashCode, and equals") {
                 WildcardToken().toString() shouldBe "WildcardToken"
                 WildcardToken().hashCode() shouldBe "WildcardToken".hashCode()
-                WildcardToken().equals(WildcardToken()) shouldBe true
-                WildcardToken().equals(ArrayAccessorToken(0)) shouldBe false
+                WildcardToken() shouldBe WildcardToken()
+                WildcardToken() shouldNotBe ArrayAccessorToken(0)
             }
         }
 
@@ -372,8 +373,8 @@ class TokenTest : DescribeSpec({
             it("should override toString, hashCode, and equals") {
                 DeepScanWildcardToken().toString() shouldBe "DeepScanWildcardToken"
                 DeepScanWildcardToken().hashCode() shouldBe "DeepScanWildcardToken".hashCode()
-                DeepScanWildcardToken().equals(DeepScanWildcardToken()) shouldBe true
-                DeepScanWildcardToken().equals(ArrayAccessorToken(0)) shouldBe false
+                DeepScanWildcardToken() shouldBe DeepScanWildcardToken()
+                DeepScanWildcardToken() shouldNotBe ArrayAccessorToken(0)
             }
         }
     }

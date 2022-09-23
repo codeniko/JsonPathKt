@@ -59,7 +59,7 @@ private fun runBenchmarksAndPrintResults(path: String, callsPerRun: Int = DEFAUL
     if (printReadmeFormat) {
         println("|  $path  |  $ktNoCache ms *($kt ms w/ cache)* |  $otherNoCache ms *($other ms w/ cache)*  |")
     } else {
-        println("$path   kt: ${kt}, jsonpath: ${other}     Without caches:  kt: ${ktNoCache}, jsonpath: ${otherNoCache}")
+        println("$path   kt: ${kt}, jsonpath: $other     Without caches:  kt: ${ktNoCache}, jsonpath: $otherNoCache")
     }
 }
 
@@ -107,7 +107,7 @@ class BenchmarkTest : StringSpec({
             if (printReadmeFormat) {
                 println("|  $name  |  $ktNoCache ms *($kt ms w/ cache)* |  $otherNoCache ms *($other ms w/ cache)* |")
             } else {
-                println("$name  kt: ${kt}, jsonpath: ${other}     Without caches:  kt: ${ktNoCache}, jsonpath: ${otherNoCache}")
+                println("$name  kt: ${kt}, jsonpath: $other     Without caches:  kt: ${ktNoCache}, jsonpath: $otherNoCache")
             }
         }
 

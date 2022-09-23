@@ -1,11 +1,12 @@
 package com.nfeld.jsonpathkt
 
+import com.fasterxml.jackson.databind.JsonNode
 import com.jayway.jsonpath.Configuration
 import com.jayway.jsonpath.spi.json.JacksonJsonProvider
 import com.nfeld.jsonpathkt.cache.CacheProvider
 import com.nfeld.jsonpathkt.util.JacksonUtil
 
-fun readTree(json: String) = JacksonUtil.mapper.readTree(json)
+fun readTree(json: String): JsonNode = JacksonUtil.mapper.readTree(json)
 
 // we need to reset this singleton across test suites
 fun resetCacheProvider() {
@@ -35,7 +36,7 @@ fun readFromJayway(json: String, path: String): String {
     val jaywayConfig = Configuration.defaultConfiguration().jsonProvider(JacksonJsonProvider())
     val documentContext = com.jayway.jsonpath.JsonPath.parse(json, jaywayConfig)
     val result = documentContext.read<Any>(path).toString()
-    println("Jayway result for $path: " + result)
+    println("Jayway result for $path: $result")
     return result
 }
 
