@@ -1,7 +1,6 @@
 package com.nfeld.jsonpathkt
 
 import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.databind.node.ArrayNode
 import com.fasterxml.jackson.module.kotlin.convertValue
 import com.nfeld.jsonpathkt.cache.CacheProvider
 import com.nfeld.jsonpathkt.util.JacksonUtil

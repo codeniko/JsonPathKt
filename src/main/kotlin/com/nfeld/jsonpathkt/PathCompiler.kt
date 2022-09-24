@@ -121,14 +121,14 @@ internal object PathCompiler {
                 c == '\'' || c == '"' -> {
                     when {
                         !isQuoteOpened -> {
-                            isQuoteOpened = !isQuoteOpened
+                            isQuoteOpened = true
                             isSingleQuote = c == '\''
                         }
                         isSingleQuote && c == '\'' -> {
-                            isQuoteOpened = !isQuoteOpened
+                            isQuoteOpened = false
                         }
                         !isSingleQuote && c == '"' -> {
-                            isQuoteOpened = !isQuoteOpened
+                            isQuoteOpened = false
                         }
                     }
 
@@ -233,8 +233,7 @@ internal object PathCompiler {
                 }
 
                 c == '\\' && isQuoteOpened -> {
-                    val nextChar = path[i+1]
-                    when (nextChar) {
+                    when (val nextChar = path[i+1]) {
                         '\\', '\'', '"' -> {
                             keyBuilder.append(nextChar)
                             ++i
