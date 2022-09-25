@@ -154,5 +154,6 @@ tasks.jacocoTestCoverageVerification {
 }
 
 tasks.check.configure {
+    dependsOn(tasks.jacocoTestReport)
     dependsOn(tasks.jacocoTestCoverageVerification)
 }
