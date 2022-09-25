@@ -23,8 +23,8 @@ tasks.withType<KotlinCompile> {
     kotlinOptions.jvmTarget = "1.8"
 }
 
-// pass -DreadmeFormat to format benchmark results to update readme
-val readmeFormat = findProperty("readmeFormat") == "true"
+// pass -PreadmeFormat to format benchmark results to update readme
+val readmeFormat = hasProperty("readmeFormat")
 
 val kotestVersion = "4.6.4"
 
