@@ -11,7 +11,7 @@ gradleEnterprise {
         termsOfServiceUrl = "https://gradle.com/terms-of-service"
         termsOfServiceAgree = "yes"
 
-        if (publishBuildScan.getOrElse("false") == "true") {
+        if (publishBuildScan.isPresent) {
             publishAlways()
         }
     }
