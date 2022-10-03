@@ -26,11 +26,6 @@ jobs:
       - name: Run gradle check
         run: ./gradlew check
 
-  codecov:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b
-
       - uses: codecov/codecov-action@d9f34f8cd5cb3b3eb79b3e4b5dae3a16df499a70
         with:
           files: build/reports/test/jacocoTestReport.xml
