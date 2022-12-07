@@ -24,7 +24,7 @@ jobs:
           version-file: ${{ env.VERSION_FILE }}
           version-file-extraction-pattern: ${{ env.VERSION_EXTRACT_PATTERN }}
 
-      - uses: actions/setup-java@a18c333f3f14249953dab3e186e5e21bf3390f1d
+      - uses: actions/setup-java@c3ac5dd0ed8db40fedb61c32fbe677e6b355e94c
         with:
           distribution: 'zulu'
           java-version: 17
