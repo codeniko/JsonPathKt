@@ -58,7 +58,7 @@ jobs:
 
       - name: Build changelog
         id: build_changelog
-        uses: mikepenz/release-changelog-builder-action@000e44613cdb6c340ac98cb1582f99e8d3230058
+        uses: mikepenz/release-changelog-builder-action@d0814e580b0dffbc99d2b25e54cd42d2eb533a97
         with:
           configuration: "changelog_config.json"
           toTag: ${{ env.RELEASE_VERSION }}
