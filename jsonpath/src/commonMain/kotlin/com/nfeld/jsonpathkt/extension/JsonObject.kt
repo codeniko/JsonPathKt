@@ -6,6 +6,6 @@ import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 
 internal inline fun JsonObject.getValueIfNotNullOrMissing(key: String): JsonElement? {
-    val value = get(key)
-    return if (value.isNotNullOrMissing()) value else null
+  val value = get(key)
+  return if (value.isNotNullOrMissing()) value else null
 }

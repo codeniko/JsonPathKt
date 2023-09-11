@@ -6,7 +6,7 @@ import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 
 internal fun printTesting(subpath: String) {
-    println("Testing like $subpath")
+  println("Testing like $subpath")
 }
 
 internal fun emptyJsonObject() = JsonObject(emptyMap())

@@ -9,16 +9,16 @@ import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.decodeFromJsonElement
 
 inline fun <reified T : Any> JsonElement.read(jsonpath: String): T? = try {
-    JsonPath(jsonpath).read(this)?.let { Json.decodeFromJsonElement(it) }
+  JsonPath(jsonpath).read(this)?.let { Json.decodeFromJsonElement(it) }
 } catch (_: Throwable) {
-    null
+  null
 }
 
 inline fun <reified T : Any> JsonElement.read(jsonpath: JsonPath): T? = try {
-    jsonpath.read(this)?.let { Json.decodeFromJsonElement(it) }
+  jsonpath.read(this)?.let { Json.decodeFromJsonElement(it) }
 } catch (_: Throwable) {
-    null
+  null
 }
 
 internal inline fun JsonElement?.isNotNullOrMissing() =
-    this != null && this !is JsonNull
+  this != null && this !is JsonNull
